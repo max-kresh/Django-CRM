@@ -40,4 +40,4 @@ ENV PATH="${PATH}:/home/ubuntu/$APP_NAME/$APP_NAME/scripts"
 
 USER ubuntu
 
-CMD [ "bash", "./scripts/gunicorn.sh" ]
+CMD [ "gunicorn.sh" ]
