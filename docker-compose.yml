@@ -15,13 +15,13 @@ services:
     build:
       context: .
       args:
-        APP_NAME: bottlecrm
+        APP_NAME: bottlecrm-api
     image: micropyramid/django-crm:1
-    # command: migrate.sh
+    command: sh -c "migrate.sh && gunicorn.sh"
     env_file:
       - ./db.env
     environment:
-      - APP_NAME=bottlecrm
+      - APP_NAME=bottlecrm-api
     ports:
       - "8001:8000"
     depends_on:
