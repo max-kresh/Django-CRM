@@ -1,5 +1,3 @@
-version: '3.8'  #update to the latest version
-
 services:
   db:
     image: postgres

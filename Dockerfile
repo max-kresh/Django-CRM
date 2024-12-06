@@ -1,12 +1,11 @@
 FROM ubuntu:20.04
 
-# invalidate cache
 ARG APP_NAME
 
-# test arg
+# Test arg
 RUN test -n "$APP_NAME"
 
-# install system packages
+# Install system packages
 RUN apt-get update -y
 RUN apt-get install -y \
   python3-pip \
@@ -19,25 +18,33 @@ RUN apt-get install -y \
   libwebp-dev \
   curl  \
   vim \
-  net-tools
+  net-tools \
+  dos2unix
 
-# setup user
+# Setup user
 RUN useradd -ms /bin/bash ubuntu
 USER ubuntu
 
-# install app
+# Setup directories
 RUN mkdir -p /home/ubuntu/"$APP_NAME"/"$APP_NAME"
 WORKDIR /home/ubuntu/"$APP_NAME"/"$APP_NAME"
-COPY . .
+# Create virtual environment and activate it
 RUN python3 -m venv ../venv
 RUN . ../venv/bin/activate
+# Install pip and gunicorn
 RUN /home/ubuntu/"$APP_NAME"/venv/bin/pip install -U pip
-RUN /home/ubuntu/"$APP_NAME"/venv/bin/pip install -r requirements.txt
 RUN /home/ubuntu/"$APP_NAME"/venv/bin/pip install gunicorn
+# Copy files and ensure correct ownership to ubuntu user
+COPY --chown=ubuntu:ubuntu . .
+# Ensure scripts end of line characters are unix formatted
+RUN dos2unix scripts/*.sh
+# Make scripts executable
+RUN chmod +x scripts/*.sh
+# Install pip requirements
+RUN /home/ubuntu/"$APP_NAME"/venv/bin/pip install -r requirements.txt
 
-# setup path
+# Setup PATH to include scripts
 ENV PATH="${PATH}:/home/ubuntu/$APP_NAME/$APP_NAME/scripts"
 
-USER ubuntu
-
+# Default command to run the app when the container starts
 CMD [ "gunicorn.sh" ]
