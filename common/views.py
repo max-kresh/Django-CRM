@@ -118,7 +118,10 @@ class UsersListView(APIView, LimitOffsetPagination):
                         is_active=True,
                     )
                     user.email = user.email
+                    password = BaseUserManager().make_random_password()
+                    user.password = make_password(password)
                     user.save()
+                    send_email_to_new_user.delay(user.id)
                     # if params.get("password"):
                     #     user.set_password(params.get("password"))
                     #     user.save()
@@ -871,6 +874,29 @@ class DomainDetailView(APIView):
             {"error": False, "message": "API setting deleted sucessfully"},
             status=status.HTTP_200_OK,
         )
+
+class UserLoginView(APIView):
+    @extend_schema(
+        description="Login through Application",  request=LoginSerializer,
+    )
+    def post(self, request):
+
+        user_email = request.data.get("email")
+        password = request.data.get("password")
+
+        hash_password = make_password(password)
+        try:
+            user = User.objects.get(email=user_email, password=hash_password)
+        except User.DoesNotExist:
+            content = {'message': 'User not found or password is incorrect.', }
+            return Response(content, status=status.HTTP_403_FORBIDDEN)
+        token = RefreshToken.for_user(user)
+        response = {}
+        response['username'] = user.email
+        response['access_token'] = str(token.access_token)
+        response['refresh_token'] = str(token)
+        response['user_id'] = user.id
+        return Response(response)
 
 class GoogleLoginView(APIView):
     """

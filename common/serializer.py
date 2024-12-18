@@ -28,6 +28,15 @@ class OrganizationSerializer(serializers.ModelSerializer):
 class SocialLoginSerializer(serializers.Serializer):
     token = serializers.CharField()
 
+class LoginSerializer(serializers.Serializer):
+    email = serializers.CharField()
+    password = serializers.CharField()
+
+class ChangePasswordSerializer(serializers.Serializer):
+    email = serializers.CharField()
+    old_password = serializers.CharField()
+    new_password = serializers.CharField()
+
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
