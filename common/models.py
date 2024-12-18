@@ -596,6 +596,14 @@ class AppSettings(BaseModel):
         ("int", "Number"),
         ("str", "Text")
     ]
+
+
+    class Meta: 
+        verbose_name = "AppSettings"
+        verbose_name_plural = "AppSettings"
+        db_table = "app_settings"
+
+    
     name = models.CharField(max_length=255, choices=SETTING_CHOICES)
     value = models.CharField(max_length=255)
     type = models.CharField(max_length=15, choices=TYPE_CHOICES)
