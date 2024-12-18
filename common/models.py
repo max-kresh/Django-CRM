@@ -586,3 +586,21 @@ class APISettings(BaseModel):
         if not self.apikey or self.apikey is None or self.apikey == "":
             self.apikey = generate_key()
         super().save(*args, **kwargs)
+
+class AppSettings(BaseModel):
+    SETTING_CHOICES = [
+        ("allow_google_login", "Allow Google Login"),
+    ]
+    TYPE_CHOICES = [
+        ("bool", "True/False"),
+        ("int", "Number"),
+        ("str", "Text")
+    ]
+    name = models.CharField(max_length=255, choices=SETTING_CHOICES)
+    value = models.CharField(max_length=255)
+    type = models.CharField(max_length=15, choices=TYPE_CHOICES)
+    
+
+    def __str__(self):
+        return f"{self.name}:{self.value} ({self.type})"
+    
