@@ -392,13 +392,14 @@ class UserUpdateStatusSwaggerSerializer(serializers.Serializer):
 
 
 class AppSettingsSerializer(serializers.ModelSerializer):
-
+    
+    
     class Meta:
         model = AppSettings
-        fields = ["name", "value", "type"]
+        fields = ["name", "value"]
 
     def validate(self, data):
-        value_type = data.get("type")
+        value_type = self.context["type"]
         value = data.get("value")
 
         if value_type == "bool":

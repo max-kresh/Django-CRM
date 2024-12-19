@@ -965,7 +965,7 @@ class AppSettingsView(APIView):
         name = request.data.get("name")
         setting = AppSettings.objects.filter(name=name).first()
         if setting:
-            serializer = AppSettingsSerializer(instance=setting, data=request.data)
+            serializer = AppSettingsSerializer(instance=setting, data=request.data, context={"type": setting.type})
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
