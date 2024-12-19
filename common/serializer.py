@@ -32,10 +32,10 @@ class LoginSerializer(serializers.Serializer):
     email = serializers.CharField()
     password = serializers.CharField()
 
-class ChangePasswordSerializer(serializers.Serializer):
+class CreatePasswordSerializer(serializers.Serializer):
     email = serializers.CharField()
-    old_password = serializers.CharField()
-    new_password = serializers.CharField()
+    password = serializers.CharField()
+    activation_key = serializers.CharField()
 
 
 class CommentSerializer(serializers.ModelSerializer):

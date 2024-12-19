@@ -5,7 +5,7 @@ from re import template
 
 import requests
 from django.contrib.auth.base_user import BaseUserManager
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.utils import json
 from django.conf import settings
@@ -118,8 +118,6 @@ class UsersListView(APIView, LimitOffsetPagination):
                         is_active=True,
                     )
                     user.email = user.email
-                    password = BaseUserManager().make_random_password()
-                    user.password = make_password(password)
                     user.save()
                     send_email_to_new_user.delay(user.id)
                     # if params.get("password"):
@@ -884,9 +882,10 @@ class UserLoginView(APIView):
         user_email = request.data.get("email")
         password = request.data.get("password")
 
-        hash_password = make_password(password)
         try:
-            user = User.objects.get(email=user_email, password=hash_password)
+            user = User.objects.get(email=user_email)
+            if not check_password(password,  user.password):
+                raise User.DoesNotExist
         except User.DoesNotExist:
             content = {'message': 'User not found or password is incorrect.', }
             return Response(content, status=status.HTTP_403_FORBIDDEN)
@@ -897,6 +896,34 @@ class UserLoginView(APIView):
         response['refresh_token'] = str(token)
         response['user_id'] = user.id
         return Response(response)
+
+class CreatePasswordView(APIView):
+    @extend_schema(
+        description="Create Password API",  request=CreatePasswordSerializer,
+    )
+    def post(self, request):
+
+        user_email = request.data.get("email")
+        password = request.data.get("password")
+        activation_key = request.data.get("activation_key")
+
+        hash_password = make_password(password)
+
+        print(f'password: {password}')
+        print(f'hash_password: {hash_password}')
+        print(f'user_email: {user_email}')
+
+        try:
+            user = User.objects.get(email=user_email, activation_key=activation_key)
+            user.password = hash_password
+            user.save()
+        except User.DoesNotExist:
+            content = {'message': 'User not found or activation_key is not valid', }
+            return Response(content, status=status.HTTP_403_FORBIDDEN)
+        response = {}
+        response['message'] = f'Password has been created for user {user.email}'
+        return Response(response)
+
 
 class GoogleLoginView(APIView):
     """
