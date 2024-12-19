@@ -604,7 +604,7 @@ class AppSettings(BaseModel):
         db_table = "app_settings"
 
     
-    name = models.CharField(max_length=255, choices=SETTING_CHOICES)
+    name = models.CharField(max_length=255, choices=SETTING_CHOICES, unique=True)
     value = models.CharField(max_length=255)
     type = models.CharField(max_length=15, choices=TYPE_CHOICES)
     

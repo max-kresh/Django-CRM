@@ -408,7 +408,6 @@ class AppSettingsSerializer(serializers.ModelSerializer):
                     {"value": f"Invalid {value_type} value {value}"}
                 )
             data["value"] = value
-
         VALID_TYPES = {
             "bool": bool,
             "int": int,
@@ -417,14 +416,12 @@ class AppSettingsSerializer(serializers.ModelSerializer):
 
         if value_type not in VALID_TYPES:
             raise ValueError(f"Invalid type: {value_type}")
-
         try:
             _ = VALID_TYPES[value_type](value)
         except (ValueError, TypeError) as e:
             raise serializers.ValidationError(
                 {"value": f"Value '{value}' cannot be converted to type '{value_type}': {str(e)}"}
             )
-
         return data
 
 class AppSettingsReadSerializer(serializers.ModelSerializer):

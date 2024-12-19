@@ -913,10 +913,7 @@ class GoogleLoginView(APIView):
     )
     def post(self, request):
         google_login_allowed = AppSettings.objects.get(name="allow_google_login")
-        print("*******************\n\n\n google_login_allowed: ", google_login_allowed)
-        print("*******************\n\n\n")
         if not bool(google_login_allowed):
-            print("google_login_allowed is false")
             return Response(
                 {"error": True, "message": "Google login is not allowed"},
                     status=status.HTTP_400_BAD_REQUEST
@@ -924,7 +921,6 @@ class GoogleLoginView(APIView):
         payload = {'access_token': request.data.get("token")}  # validate the token
         r = requests.get('https://www.googleapis.com/oauth2/v2/userinfo', params=payload)
         data = json.loads(r.text)
-        print(data)
         if 'error' in data:
             content = {'message': 'wrong google token / this google token is already expired.'}
             return Response(content)
@@ -966,11 +962,13 @@ class AppSettingsView(APIView):
         return super().dispatch(request, *args, **kwargs)
     
     def put(self, request):
-        serializer = AppSettingsSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, 200)
-            
+        name = request.data.get("name")
+        setting = AppSettings.objects.filter(name=name).first()
+        if setting:
+            serializer = AppSettingsSerializer(instance=setting, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def get(self, request):
