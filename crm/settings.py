@@ -155,7 +155,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
 
 
-TIME_ZONE = "Asia/Kolkata"
+TIME_ZONE = os.environ["TIME_ZONE"]
 
 USE_I18N = True
 
