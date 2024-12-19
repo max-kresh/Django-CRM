@@ -16,13 +16,14 @@ from common.models import (
     Org,
     Profile,
     User,
+    AppSettings,
 )
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Org
-        fields = ("id", "name","api_key")
+        fields = ("id", "name", "api_key")
 
 
 class SocialLoginSerializer(serializers.Serializer):
@@ -68,7 +69,6 @@ class LeadCommentSerializer(serializers.ModelSerializer):
             "commented_by",
             "lead",
         )
-
 
 
 class OrgProfileCreateSerializer(serializers.ModelSerializer):
@@ -124,7 +124,8 @@ class BillingAddressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Address
-        fields = ("address_line", "street", "city", "state", "postcode", "country")
+        fields = ("address_line", "street", "city",
+                  "state", "postcode", "country")
 
     def __init__(self, *args, **kwargs):
         account_view = kwargs.pop("account", False)
@@ -189,7 +190,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id","email","profile_pic"]
+        fields = ["id", "email", "profile_pic"]
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -265,7 +266,8 @@ class DocumentCreateSerializer(serializers.ModelSerializer):
                     "Document with this Title already exists"
                 )
         if Document.objects.filter(title__iexact=title, org=self.org).exists():
-            raise serializers.ValidationError("Document with this Title already exists")
+            raise serializers.ValidationError(
+                "Document with this Title already exists")
         return title
 
     class Meta:
@@ -329,6 +331,7 @@ class APISettingsListSerializer(serializers.ModelSerializer):
             "org",
         ]
 
+
 class APISettingsSwaggerSerializer(serializers.ModelSerializer):
     class Meta:
         model = APISettings
@@ -350,6 +353,7 @@ class DocumentCreateSwaggerSerializer(serializers.ModelSerializer):
             "shared_to",
         ]
 
+
 class DocumentEditSwaggerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
@@ -368,21 +372,61 @@ class UserCreateSwaggerSerializer(serializers.Serializer):
     """
     ROLE_CHOICES = ["ADMIN", "USER"]
 
-    email = serializers.CharField(max_length=1000,required=True)
-    role = serializers.ChoiceField(choices = ROLE_CHOICES,required=True)
+    email = serializers.CharField(max_length=1000, required=True)
+    role = serializers.ChoiceField(choices=ROLE_CHOICES, required=True)
     phone = serializers.CharField(max_length=12)
     alternate_phone = serializers.CharField(max_length=12)
-    address_line = serializers.CharField(max_length=10000,required=True)
+    address_line = serializers.CharField(max_length=10000, required=True)
     street = serializers.CharField(max_length=1000)
     city = serializers.CharField(max_length=1000)
     state = serializers.CharField(max_length=1000)
     pincode = serializers.CharField(max_length=1000)
     country = serializers.CharField(max_length=1000)
 
+
 class UserUpdateStatusSwaggerSerializer(serializers.Serializer):
 
     STATUS_CHOICES = ["Active", "Inactive"]
 
-    status = serializers.ChoiceField(choices = STATUS_CHOICES,required=True)
+    status = serializers.ChoiceField(choices=STATUS_CHOICES, required=True)
 
 
+class AppSettingsSerializer(serializers.ModelSerializer):
+    
+    
+    class Meta:
+        model = AppSettings
+        fields = ["name", "value"]
+
+    def validate(self, data):
+        value_type = self.context["type"]
+        value = data.get("value")
+
+        if value_type == "bool":
+            value = value.capitalize()
+            if value not in ["True", "False"]: 
+                raise serializers.ValidationError(
+                    {"value": f"Invalid {value_type} value {value}"}
+                )
+            data["value"] = value
+        VALID_TYPES = {
+            "bool": bool,
+            "int": int,
+            "str": str,
+        }
+
+        if value_type not in VALID_TYPES:
+            raise ValueError(f"Invalid type: {value_type}")
+        try:
+            _ = VALID_TYPES[value_type](value)
+        except (ValueError, TypeError) as e:
+            raise serializers.ValidationError(
+                {"value": f"Value '{value}' cannot be converted to type '{value_type}': {str(e)}"}
+            )
+        return data
+
+class AppSettingsReadSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = AppSettings
+        fields = ["name"]

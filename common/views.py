@@ -28,9 +28,10 @@ from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schem
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import viewsets
 
 from accounts.models import Account, Contact, Tags
 from accounts.serializer import AccountSerializer
@@ -325,6 +326,7 @@ class UserDetailView(APIView):
         )
         self.object.delete()
         return Response({"status": "success"}, status=status.HTTP_200_OK)
+
 
 
 # check_header not working
@@ -933,10 +935,15 @@ class GoogleLoginView(APIView):
         description="Login through Google",  request=SocialLoginSerializer,
     )
     def post(self, request):
+        google_login_allowed = AppSettings.objects.get(name="allow_google_login")
+        if not bool(google_login_allowed):
+            return Response(
+                {"error": True, "message": "Google login is not allowed"},
+                    status=status.HTTP_400_BAD_REQUEST
+            )
         payload = {'access_token': request.data.get("token")}  # validate the token
         r = requests.get('https://www.googleapis.com/oauth2/v2/userinfo', params=payload)
         data = json.loads(r.text)
-        print(data)
         if 'error' in data:
             content = {'message': 'wrong google token / this google token is already expired.'}
             return Response(content)
@@ -958,3 +965,39 @@ class GoogleLoginView(APIView):
         response['refresh_token'] = str(token)
         response['user_id'] = user.id
         return Response(response)
+    
+
+class AppSettingsView(APIView):
+    serializer_class = AppSettingsSerializer
+    # validation_serializer = None
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            # Allow all users to make GET requests
+            return [AllowAny()]
+        else:
+            # Restrict POST requests to admins only
+            return [IsAdminUser()]
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == "GET":
+            self.authentication_classes = []  
+        return super().dispatch(request, *args, **kwargs)
+    
+    def put(self, request):
+        name = request.data.get("name")
+        setting = AppSettings.objects.filter(name=name).first()
+        if setting:
+            serializer = AppSettingsSerializer(instance=setting, data=request.data, context={"type": setting.type})
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def get(self, request):
+        settings = AppSettings.objects.all()
+        serializer = AppSettingsSerializer(settings, many=True)
+        return Response(serializer.data)
+
+        
+
