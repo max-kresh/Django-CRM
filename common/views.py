@@ -909,10 +909,6 @@ class CreatePasswordView(APIView):
 
         hash_password = make_password(password)
 
-        print(f'password: {password}')
-        print(f'hash_password: {hash_password}')
-        print(f'user_email: {user_email}')
-
         try:
             user = User.objects.get(email=user_email, activation_key=activation_key)
             user.password = hash_password
