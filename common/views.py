@@ -22,6 +22,8 @@ from django.utils.translation import gettext as _
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 #from common.external_auth import CustomDualAuthentication
@@ -905,14 +907,22 @@ class CreatePasswordView(APIView):
     )
     def post(self, request):
 
-        user_email = request.data.get("email")
         password = request.data.get("password")
-        activation_key = request.data.get("activation_key")
+        uid = request.data.get("uid")
+        user_token = request.data.get("user_token")
+        user_token_delta = request.data.get("user_token_delta")
 
         hash_password = make_password(password)
 
         try:
-            user = User.objects.get(email=user_email, activation_key=activation_key)
+            user = User.objects.get(activation_key=user_token_delta)
+            user_uid = urlsafe_base64_encode(force_bytes(user.pk))
+            if (user_uid != uid):
+                raise User.DoesNotExist
+
+            if (not user_token_delta.startswith(user_token)):
+                raise User.DoesNotExist
+
             user.password = hash_password
             user.save()
         except User.DoesNotExist:

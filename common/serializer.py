@@ -34,7 +34,9 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField()
 
 class CreatePasswordSerializer(serializers.Serializer):
-    email = serializers.CharField()
+    uid = serializers.CharField()
+    user_token = serializers.CharField()
+    user_token_delta = serializers.CharField()
     password = serializers.CharField()
     activation_key = serializers.CharField()
 
