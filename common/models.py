@@ -587,6 +587,7 @@ class APISettings(BaseModel):
             self.apikey = generate_key()
         super().save(*args, **kwargs)
 
+
 class AppSettings(BaseModel):
     SETTING_CHOICES = [
         ("allow_google_login", "Allow Google Login"),
@@ -597,16 +598,22 @@ class AppSettings(BaseModel):
         ("str", "Text")
     ]
 
-
-    class Meta: 
-        verbose_name = "AppSettings"
-        verbose_name_plural = "AppSettings"
-        db_table = "app_settings"
-
-    
     name = models.CharField(max_length=255, choices=SETTING_CHOICES, unique=True)
     value = models.CharField(max_length=255)
     type = models.CharField(max_length=15, choices=TYPE_CHOICES)
+
+    class Meta:
+        verbose_name = "AppSettings"
+        verbose_name_plural = "AppSettings"
+        db_table = "app_settings"
+        
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(type='bool', value__in=['True', 'False']) | \
+                    models.Q(type='int', value__regex=r'^\d+$'),
+                name='value_type_constraint',
+            ),
+        ]
     
 
     def __str__(self):
