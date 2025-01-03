@@ -41,7 +41,7 @@ from cases.models import Case
 from cases.serializer import CaseSerializer
 
 ##from common.custom_auth import JSONWebTokenAuthentication
-from common import serializer, swagger_params1
+from common import serializer, swagger_params1, application_settings
 from common.models import APISettings, Document, Org, Profile, User
 from common.serializer import *
 # from common.serializer import (
@@ -945,8 +945,8 @@ class GoogleLoginView(APIView):
         description="Login through Google",  request=SocialLoginSerializer,
     )
     def post(self, request):
-        google_login_allowed = AppSettings.objects.get(name="allow_google_login")
-        if not bool(google_login_allowed):
+        google_login_allowed = application_settings.is_google_login_allowed()
+        if not google_login_allowed:
             return Response(
                 {"error": True, "message": "Google login is not allowed"},
                     status=status.HTTP_400_BAD_REQUEST
@@ -957,10 +957,17 @@ class GoogleLoginView(APIView):
         if 'error' in data:
             content = {'message': 'wrong google token / this google token is already expired.'}
             return Response(content)
+        user_email = data['email']
         # create user if not exist
         try:
-            user = User.objects.get(email=data['email'])
+            user = User.objects.get(email=user_email)
         except User.DoesNotExist:
+            login_without_invitation = application_settings.is_login_without_invitation_allowed()
+            if not login_without_invitation:
+                return Response(
+                    {"error": True, "message": f"User '{user_email}' was not invited to work in application"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             user = User()
             user.email = data['email']
             user.profile_pic = data['picture']
@@ -1002,7 +1009,10 @@ class AppSettingsView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": True, "errors": f"Setting '{name}' not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
     
     def get(self, request):
         settings = AppSettings.objects.all()
