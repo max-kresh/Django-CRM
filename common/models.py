@@ -591,6 +591,7 @@ class APISettings(BaseModel):
 class AppSettings(BaseModel):
     SETTING_CHOICES = [
         ("allow_google_login", "Allow Google Login"),
+        ("allow_login_without_invitation", "Allow Login Without Invitation"),
     ]
     TYPE_CHOICES = [
         ("bool", "True/False"),
