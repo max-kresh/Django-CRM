@@ -4,4 +4,5 @@
 ./wait-for-postgres.sh "$DBHOST"
 python3 manage.py collectstatic --noinput
 python3 manage.py migrate
+python3 initialize_app_settings.py
 python3 manage.py runserver 0.0.0.0:8000
