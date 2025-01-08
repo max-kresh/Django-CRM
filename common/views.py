@@ -39,7 +39,7 @@ from accounts.models import Account, Contact, Tags
 from accounts.serializer import AccountSerializer
 from cases.models import Case
 from cases.serializer import CaseSerializer
-from common import permissions
+from common import crm_permissions
 from common.utils import Constants
 
 ##from common.custom_auth import JSONWebTokenAuthentication
@@ -75,9 +75,9 @@ class GetTeamsAndUsersView(APIView):
     permission_classes = (IsAuthenticated,)
     def get_permissions(self):
         if self.request.method in Constants.HTTP_WRITE_METHODS:
-            return [permissions.IsAdmin()] 
+            return [crm_permissions.IsAdmin()] 
         else:
-            return [permissions.CanListUsers()]    
+            return [crm_permissions.CanListUsers()]    
 
     @extend_schema(tags=["users"], parameters=swagger_params1.organization_params)
     def get(self, request, *args, **kwargs):
@@ -99,9 +99,9 @@ class UsersListView(APIView, LimitOffsetPagination):
     
     def get_permissions(self):
         if self.request.method in Constants.HTTP_WRITE_METHODS:
-            return [permissions.IsAdmin()] 
+            return [crm_permissions.IsAdmin()] 
         else:
-            return [permissions.CanListUsers()]
+            return [crm_permissions.CanListUsers()]
     
     @extend_schema(parameters=swagger_params1.organization_params,request=UserCreateSwaggerSerializer)
     def post(self, request, format=None):
@@ -221,7 +221,7 @@ class UsersListView(APIView, LimitOffsetPagination):
 
 
 class UserDetailView(APIView):
-    permission_classes = (IsAuthenticated, permissions.IsAdmin)
+    permission_classes = (IsAuthenticated, crm_permissions.IsAdmin)
 
     def get_object(self, pk):
         profile = get_object_or_404(Profile, pk=pk)
@@ -1010,7 +1010,7 @@ class AppSettingsView(APIView):
             return [AllowAny()]
         else:
             # Restrict POST requests to admins only
-            return [permissions.IsAdmin()]
+            return [crm_permissions.IsAdmin()]
 
     def dispatch(self, request, *args, **kwargs):
         if request.method == "GET":

@@ -1,5 +1,5 @@
 """
-File: permissions.py
+File: crm_permissions.py
 Description: This file implements permissions based on user roles.
 
 Author: Mithat Daglar
