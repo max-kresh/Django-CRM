@@ -1,6 +1,15 @@
 import pytz
 from django.utils.translation import gettext_lazy as _
 
+class Constants:
+    ADMIN = "ADMIN"
+    SALES_MANAGER = "SALES_MANAGER"
+    SALES_REPRESENTATIVE = "SALES_REPRESENTATIVE"
+    USER = "USER"
+    
+    HTTP_WRITE_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
+
+
 
 def jwt_payload_handler(user):
     """Custom payload handler
@@ -66,8 +75,10 @@ TYPECHOICES = (
 )
 
 ROLES = (
-    ("ADMIN", "ADMIN"),
-    ("USER", "USER"),
+    (Constants.ADMIN, "ADMIN"),
+    (Constants.USER, "USER"),
+    (Constants.SALES_MANAGER, "SALES MANAGER"),
+    (Constants.SALES_REPRESENTATIVE, "SALES REPRESENTATIVE"),
 )
 
 LEAD_STATUS = (

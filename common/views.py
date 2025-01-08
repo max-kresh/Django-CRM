@@ -39,6 +39,8 @@ from accounts.models import Account, Contact, Tags
 from accounts.serializer import AccountSerializer
 from cases.models import Case
 from cases.serializer import CaseSerializer
+from common import permissions
+from common.utils import Constants
 
 ##from common.custom_auth import JSONWebTokenAuthentication
 from common import serializer, swagger_params1, application_settings
@@ -71,6 +73,11 @@ from teams.serializer import TeamsSerializer
 class GetTeamsAndUsersView(APIView):
 
     permission_classes = (IsAuthenticated,)
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [permissions.IsAdmin()] 
+        else:
+            return [permissions.CanListUsers()]    
 
     @extend_schema(tags=["users"], parameters=swagger_params1.organization_params)
     def get(self, request, *args, **kwargs):
@@ -89,6 +96,13 @@ class GetTeamsAndUsersView(APIView):
 class UsersListView(APIView, LimitOffsetPagination):
 
     permission_classes = (IsAuthenticated,)
+    
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [permissions.IsAdmin()] 
+        else:
+            return [permissions.CanListUsers()]
+    
     @extend_schema(parameters=swagger_params1.organization_params,request=UserCreateSwaggerSerializer)
     def post(self, request, format=None):
         print(request.profile.role, request.user.is_superuser)
@@ -146,11 +160,11 @@ class UsersListView(APIView, LimitOffsetPagination):
 
     @extend_schema(parameters=swagger_params1.user_list_params)
     def get(self, request, format=None):
-        if self.request.profile.role != "ADMIN" and not self.request.user.is_superuser:
-            return Response(
-                {"error": True, "errors": "Permission Denied"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        # if self.request.profile.role != "ADMIN" and not self.request.user.is_superuser:
+        #     return Response(
+        #         {"error": True, "errors": "Permission Denied"},
+        #         status=status.HTTP_403_FORBIDDEN,
+        #     )
         queryset = Profile.objects.filter(org=request.profile.org).order_by("-id")
         params = request.query_params
         if params:
@@ -207,7 +221,7 @@ class UsersListView(APIView, LimitOffsetPagination):
 
 
 class UserDetailView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, permissions.IsAdmin)
 
     def get_object(self, pk):
         profile = get_object_or_404(Profile, pk=pk)
@@ -898,7 +912,8 @@ class UserLoginView(APIView):
         response['username'] = user.email
         response['access_token'] = str(token.access_token)
         response['refresh_token'] = str(token)
-        response['user_id'] = user.id
+        response['user_id'] = user.id    
+        response['role'] = user.profile.first().role
         return Response(response)
 
 class CreatePasswordView(APIView):
@@ -981,6 +996,7 @@ class GoogleLoginView(APIView):
         response['access_token'] = str(token.access_token)
         response['refresh_token'] = str(token)
         response['user_id'] = user.id
+        response['role'] = user.profile.first().role
         return Response(response)
     
 
@@ -994,7 +1010,7 @@ class AppSettingsView(APIView):
             return [AllowAny()]
         else:
             # Restrict POST requests to admins only
-            return [IsAdminUser()]
+            return [permissions.IsAdmin()]
 
     def dispatch(self, request, *args, **kwargs):
         if request.method == "GET":

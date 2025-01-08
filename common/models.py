@@ -4,6 +4,7 @@ import os
 import time
 import uuid
 import arrow
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from .manager import UserManager
@@ -188,7 +189,7 @@ class Org(BaseModel):
 
 
 class Profile(BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="profile")
     org = models.ForeignKey(
         Org, null=True, on_delete=models.CASCADE, blank=True, related_name="user_org"
     )
@@ -230,7 +231,13 @@ class Profile(BaseModel):
             'is_active' : self.user.is_active,
             'profile_pic' : self.user.profile_pic
         }
-
+    
+    
+    def save(self, *args, **kwargs):
+        # Validate the role
+        if self.role not in dict(ROLES):
+            raise ValidationError(f"Invalid role: {self.role}")
+        super().save(*args, **kwargs)
 
 class Comment(BaseModel):
     case = models.ForeignKey(
