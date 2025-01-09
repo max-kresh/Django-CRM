@@ -64,10 +64,20 @@ class GetProfileAndOrg(object):
                 except Org.DoesNotExist:
                     raise AuthenticationFailed('Invalid API Key')
             if user_id is not None:
-                if request.headers.get("org"):
-                    profile = Profile.objects.get(
-                        user_id=user_id, org=request.headers.get("org"), is_active=True
-                    )
+                # Frontend app sends id of the org and Swagger UI sends name 
+                # of the org. This blog is changed to meet both sides.
+                org=request.headers.get("org")
+                if org:
+                    profile = None
+                    try: 
+                        profile = Profile.objects.get(
+                            user_id=user_id, org=org, is_active=True
+                        )
+                    except:
+                        org_by_name = Org.objects.get(name=str(org))
+                        profile = Profile.objects.get(
+                            user_id=user_id, org=org_by_name, is_active=True
+                        )
                     if profile:
                         request.profile = profile
         except :
