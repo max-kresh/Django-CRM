@@ -11,12 +11,13 @@ from django.contrib.auth import get_user_model
 
 from common.models import Org, Profile
 from common.serializer import UserCreateSwaggerSerializer
+from common.utils import Constants
 
 USER_URL = reverse("common_urls:api_common:users-list")
 USER_DETAIL_URL = reverse("common_urls:api_common:users-list")
 
 def create_user(role):
-    if role == "ADMIN":
+    if role == Constants.ADMIN:
         user = get_user_model().objects.create_superuser(
             **{"email":"test@example.com", "password":"password123"}
         )
@@ -28,7 +29,7 @@ def create_user(role):
 
 payload = {
     "email": "test1@example.com",
-    "role": "USER",
+    "role": Constants.USER,
     "address_line": "Test Address", 
     "phone": "+31684250000",
     "alternate_phone": "+31684250001",
@@ -52,11 +53,11 @@ class PublicUserApiTests(TestCase):
     """Tests for public user apis on user-list url"""
 
     def setUp(self):
-        self.user = create_user("USER")
+        self.user = create_user(Constants.USER)
         
         self.org = Org.objects.create(name="Test_Org", api_key="test_key")
         self.org.save() 
-        self.profile = Profile.objects.create(org=self.org, user=self.user, role="USER")
+        self.profile = Profile.objects.create(org=self.org, user=self.user, role=Constants.USER)
         self.profile.save()
         self.user.save()
 
@@ -76,7 +77,7 @@ class PrivateUserApiTests(TestCase):
     """Tests for private user apis on user-list url"""
 
     def setUp(self):
-        self.user = create_user("ADMIN")
+        self.user = create_user(Constants.ADMIN)
 
         self.client = APIClient()
         self.client.force_authenticate(self.user)       

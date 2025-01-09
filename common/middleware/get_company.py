@@ -8,6 +8,7 @@ from crum import get_current_user
 from django.utils.functional import SimpleLazyObject
 
 from common.models import Org, Profile, User
+from common.utils import Constants
 
 
 # def set_profile_request(request, org, token):
@@ -20,7 +21,7 @@ from common.models import Org, Profile, User
 #         request.profile = Profile.objects.get(
 #             user=request.user, org=org, is_active=True
 #         )
-#         request.profile.role = "ADMIN"
+#         request.profile.role = Constants.ADMIN
 #         request.profile.save()
 #         if request.profile is None:
 #             logout(request)
@@ -59,7 +60,7 @@ class GetProfileAndOrg(object):
                     organization = Org.objects.get(api_key=api_key)
                     api_key_user = organization
                     request.META['org'] = api_key_user.id
-                    profile = Profile.objects.filter(org=api_key_user, role="ADMIN").first()
+                    profile = Profile.objects.filter(org=api_key_user, role=Constants.ADMIN).first()
                     user_id = profile.user.id
                 except Org.DoesNotExist:
                     raise AuthenticationFailed('Invalid API Key')

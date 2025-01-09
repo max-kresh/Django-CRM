@@ -49,11 +49,9 @@ class IsUser(BasePermission):
 class CanListUsers(BasePermission):
     """Checks if the user can make GET request to user-list url"""
     def has_permission(self, request, view):
-        role = get_user_role(request.user)
-        return role in [Constants.ADMIN, Constants.SALES_MANAGER] and request.method in ["GET"]
+        return (IsAdmin() or IsSalesManager()) and request.method in ["GET"]
 
 class CanModifyUsers(BasePermission):
     """Checks if the user can make POST, PUT or DELETE request to user-list url"""
     def has_permission(self, request, view):
-        role = get_user_role(request.user)
-        return role == Constants.ADMIN and request.method in ["POST", "PUT", "DELETE"]
+        return IsAdmin() and (request.method in Constants.HTTP_WRITE_METHODS)

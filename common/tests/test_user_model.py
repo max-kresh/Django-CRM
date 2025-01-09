@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from common.models import User, Profile
+from common.utils import Constants
 
 class ModelTest(TestCase):
     """Tests for user roles"""
@@ -13,9 +14,9 @@ class ModelTest(TestCase):
     def test_set_user_role_success(self):
         print("test_set_user_role_success")
         profile = Profile.objects.create(user=self.user)
-        profile.role = "ADMIN"
+        profile.role = Constants.ADMIN
         profile.save()
-        self.assertEqual(self.user.profile.first().role, "ADMIN")
+        self.assertEqual(self.user.profile.first().role, Constants.ADMIN)
     
     def test_set_user_role_fail_on_inproper_role(self):
         print("test_set_user_role_success")
@@ -23,7 +24,7 @@ class ModelTest(TestCase):
         profile.role = "INVALID_ROLE"
         
         self.assertRaises(Exception, profile.save)
-        self.assertEqual(self.user.profile.first().role, "USER")
+        self.assertEqual(self.user.profile.first().role, Constants.USER)
 
 
         

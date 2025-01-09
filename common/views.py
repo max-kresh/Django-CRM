@@ -106,7 +106,7 @@ class UsersListView(APIView, LimitOffsetPagination):
     @extend_schema(parameters=swagger_params1.organization_params,request=UserCreateSwaggerSerializer)
     def post(self, request, format=None):
         print(request.profile.role, request.user.is_superuser)
-        if self.request.profile.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
             return Response(
                 {"error": True, "errors": "Permission Denied"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -160,7 +160,7 @@ class UsersListView(APIView, LimitOffsetPagination):
 
     @extend_schema(parameters=swagger_params1.user_list_params)
     def get(self, request, format=None):
-        # if self.request.profile.role != "ADMIN" and not self.request.user.is_superuser:
+        # if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
         #     return Response(
         #         {"error": True, "errors": "Permission Denied"},
         #         status=status.HTTP_403_FORBIDDEN,
@@ -231,7 +231,7 @@ class UserDetailView(APIView):
     def get(self, request, pk, format=None):
         profile_obj = self.get_object(pk)
         if (
-            self.request.profile.role != "ADMIN"
+            self.request.profile.role != Constants.ADMIN
             and not self.request.profile.is_admin
             and self.request.profile.id != profile_obj.id
         ):
@@ -272,7 +272,7 @@ class UserDetailView(APIView):
         profile = self.get_object(pk)
         address_obj = profile.address
         if (
-            self.request.profile.role != "ADMIN"
+            self.request.profile.role != Constants.ADMIN
             and not self.request.user.is_superuser
             and self.request.profile.id != profile.id
         ):
@@ -324,7 +324,7 @@ class UserDetailView(APIView):
         tags=["users"],parameters=swagger_params1.organization_params
     )
     def delete(self, request, pk, format=None):
-        if self.request.profile.role != "ADMIN" and not self.request.profile.is_admin:
+        if self.request.profile.role != Constants.ADMIN and not self.request.profile.is_admin:
             return Response(
                 {"error": True, "errors": "Permission Denied"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -359,7 +359,7 @@ class ApiHomeView(APIView):
         )
         opportunities = Opportunity.objects.filter(org=request.profile.org)
 
-        if self.request.profile.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
             accounts = accounts.filter(
                 Q(assigned_to=self.request.profile) | Q(created_by=self.request.profile.user)
             )
@@ -467,7 +467,7 @@ class DocumentListView(APIView, LimitOffsetPagination):
     def get_context_data(self, **kwargs):
         params = self.request.query_params
         queryset = self.model.objects.filter(org=self.request.profile.org).order_by("-id")
-        if self.request.user.is_superuser or self.request.profile.role == "ADMIN":
+        if self.request.user.is_superuser or self.request.profile.role == Constants.ADMIN:
             queryset = queryset
         else:
             if self.request.profile.documents():
@@ -495,10 +495,10 @@ class DocumentListView(APIView, LimitOffsetPagination):
 
         context = {}
         profile_list = Profile.objects.filter(is_active=True, org=self.request.profile.org)
-        if self.request.profile.role == "ADMIN" or self.request.profile.is_admin:
+        if self.request.profile.role == Constants.ADMIN or self.request.profile.is_admin:
             profiles = profile_list.order_by("user__email")
         else:
-            profiles = profile_list.filter(role="ADMIN").order_by("user__email")
+            profiles = profile_list.filter(role=Constants.ADMIN).order_by("user__email")
         search = False
         if (
             params.get("document_file")
@@ -616,7 +616,7 @@ class DocumentDetailView(APIView):
                 {"error": True, "errors": "User company doesnot match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if self.request.profile.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
             if not (
                 (self.request.profile == self.object.created_by)
                 or (self.request.profile in self.object.shared_to.all())
@@ -629,10 +629,10 @@ class DocumentDetailView(APIView):
                     status=status.HTTP_403_FORBIDDEN,
                 )
         profile_list = Profile.objects.filter(org=self.request.profile.org)
-        if request.profile.role == "ADMIN" or request.user.is_superuser:
+        if request.profile.role == Constants.ADMIN or request.user.is_superuser:
             profiles = profile_list.order_by("user__email")
         else:
-            profiles = profile_list.filter(role="ADMIN").order_by("user__email")
+            profiles = profile_list.filter(role=Constants.ADMIN).order_by("user__email")
         context = {}
         context.update(
             {
@@ -659,7 +659,7 @@ class DocumentDetailView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        if self.request.profile.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
             if (
                 self.request.profile != document.created_by
             ):  # or (self.request.profile not in document.shared_to.all()):
@@ -693,7 +693,7 @@ class DocumentDetailView(APIView):
                 {"error": True, "errors": "User company doesnot match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if self.request.profile.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
             if not (
                 (self.request.profile == self.object.created_by)
                 or (self.request.profile in self.object.shared_to.all())
@@ -746,7 +746,7 @@ class UserStatusView(APIView):
         description="User Status View",parameters=swagger_params1.organization_params, request=UserUpdateStatusSwaggerSerializer
     )
     def post(self, request, pk, format=None):
-        if self.request.profile.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
             return Response(
                 {
                     "error": True,

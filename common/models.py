@@ -23,7 +23,7 @@ from common.templatetags.common_tags import (
     is_document_file_video,
     is_document_file_zip,
 )
-from common.utils import COUNTRIES, ROLES
+from common.utils import COUNTRIES, ROLES, Constants
 from common.base import BaseModel
 
 
@@ -202,7 +202,7 @@ class Profile(BaseModel):
         blank=True,
         null=True,
     )
-    role = models.CharField(max_length=50, choices=ROLES, default="USER")
+    role = models.CharField(max_length=50, choices=ROLES, default=Constants.USER)
     has_sales_access = models.BooleanField(default=False)
     has_marketing_access = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
