@@ -45,13 +45,22 @@ class IsUser(BasePermission):
         role = get_user_role(request.user)
         return role == Constants.USER
 
+
 # Role and http method-based permissions
 class CanListUsers(BasePermission):
-    """Checks if the user can make GET request to user-list url"""
+    """Allows GET requests for Admin and Sales Manager roles."""
+    
     def has_permission(self, request, view):
-        return (IsAdmin() or IsSalesManager()) and request.method in ["GET"]
+        # Check if the user has the required role and the request method is safe
+        return (
+            (IsAdmin().has_permission(request, view) or IsSalesManager().has_permission(request, view))
+            and request.method in ["GET"]
+        )
+
 
 class CanModifyUsers(BasePermission):
-    """Checks if the user can make POST, PUT or DELETE request to user-list url"""
+    """Allows POST, PUT, or DELETE requests for Admin role only."""
+    
     def has_permission(self, request, view):
-        return IsAdmin() and (request.method in Constants.HTTP_WRITE_METHODS)
+        # Check if the user is an Admin and the request method is for modification
+        return IsAdmin().has_permission(request, view) and request.method in Constants.HTTP_WRITE_METHODS
