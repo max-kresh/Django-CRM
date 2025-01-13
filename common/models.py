@@ -12,6 +12,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
+from django.core.validators import RegexValidator
 
 from common.templatetags.common_tags import (
     is_document_file_audio,
@@ -193,8 +194,10 @@ class Profile(BaseModel):
     org = models.ForeignKey(
         Org, null=True, on_delete=models.CASCADE, blank=True, related_name="user_org"
     )
-    phone = PhoneNumberField(null=True, unique=True)
-    alternate_phone = PhoneNumberField(null=True,blank=True)
+    phone = PhoneNumberField(null=True, unique=True, 
+                             validators=[RegexValidator(Constants.PHONE_VALIDATOR_REG_EX)])
+    alternate_phone = PhoneNumberField(null=True,blank=True, 
+                                       validators=[RegexValidator(Constants.PHONE_VALIDATOR_REG_EX)])
     address = models.ForeignKey(
         Address,
         related_name="adress_users",

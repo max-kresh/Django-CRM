@@ -140,7 +140,7 @@ class UsersListView(APIView, LimitOffsetPagination):
                     # if params.get("password"):
                     #     user.set_password(params.get("password"))
                     #     user.save()
-                    profile = Profile.objects.create(
+                    profile = profile_serializer.save(
                         user=user,
                         date_of_joining=timezone.now(),
                         role=params.get("role"),
