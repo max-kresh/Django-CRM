@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import AccessMixin
 from django.core.exceptions import PermissionDenied
+from common.utils import Constants
 
 
 def sales_access_required(function):
@@ -7,7 +8,7 @@ def sales_access_required(function):
 
     def wrap(request, *args, **kwargs):
         if (
-            request.user.role == "ADMIN"
+            request.user.role == Constants.ADMIN
             or request.user.is_superuser
             or request.user.has_sales_access
         ):
@@ -22,7 +23,7 @@ def marketing_access_required(function):
 
     def wrap(request, *args, **kwargs):
         if (
-            request.user.role == "ADMIN"
+            request.user.role == Constants.ADMIN
             or request.user.is_superuser
             or request.user.has_marketing_access
         ):
@@ -40,7 +41,7 @@ class SalesAccessRequiredMixin(AccessMixin):
             return self.handle_no_permission()
         self.raise_exception = True
         if (
-            request.user.role == "ADMIN"
+            request.user.role == Constants.ADMIN
             or request.user.is_superuser
             or request.user.has_sales_access
         ):
@@ -56,7 +57,7 @@ class MarketingAccessRequiredMixin(AccessMixin):
             return self.handle_no_permission()
         self.raise_exception = True
         if (
-            request.user.role == "ADMIN"
+            request.user.role == Constants.ADMIN
             or request.user.is_superuser
             or request.user.has_marketing_access
         ):
@@ -68,7 +69,7 @@ def admin_login_required(function):
     """this function is a decorator used to authorize if a user is admin"""
 
     def wrap(request, *args, **kwargs):
-        if request.user.role == "ADMIN" or request.user.is_superuser:
+        if request.user.role == Constants.ADMIN or request.user.is_superuser:
             return function(request, *args, **kwargs)
         raise PermissionDenied
 

@@ -1,6 +1,7 @@
 from django.test import Client, TestCase
 
 from common.models import Org, User
+from common.utils import Constants
 from emails.forms import EmailForm
 from emails.models import Email
 
@@ -15,7 +16,7 @@ class UserCreation(TestCase):
             first_name="janeEmail@example.com",
             username="jane",
             email="janeEmail@example.com",
-            role="ADMIN",
+            role=Constants.ADMIN,
             org=self.org,
         )
         self.user.set_password("password")

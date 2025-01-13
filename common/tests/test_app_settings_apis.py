@@ -18,7 +18,7 @@ def create_setting(**setting_params):
     return AppSettings.objects.create(**setting_params)
 
 
-class PublicCommonApiTests(TestCase):
+class PublicAppSettingsApiTests(TestCase):
     """Tests for public common apis"""
 
     def setUp(self):
@@ -68,7 +68,7 @@ class PublicCommonApiTests(TestCase):
         self.assertEqual(setting.value, setting_original["value"])
 
 
-class PrivateCommonApiTests(TestCase):
+class PrivateAppSettingsApiTests(TestCase):
     """Tests for private common apis"""
 
     def setUp(self):

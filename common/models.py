@@ -4,6 +4,7 @@ import os
 import time
 import uuid
 import arrow
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from .manager import UserManager
@@ -11,6 +12,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
+from django.core.validators import RegexValidator
 
 from common.templatetags.common_tags import (
     is_document_file_audio,
@@ -22,7 +24,7 @@ from common.templatetags.common_tags import (
     is_document_file_video,
     is_document_file_zip,
 )
-from common.utils import COUNTRIES, ROLES
+from common.utils import COUNTRIES, ROLES, Constants
 from common.base import BaseModel
 
 
@@ -188,12 +190,14 @@ class Org(BaseModel):
 
 
 class Profile(BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="profile")
     org = models.ForeignKey(
         Org, null=True, on_delete=models.CASCADE, blank=True, related_name="user_org"
     )
-    phone = PhoneNumberField(null=True, unique=True)
-    alternate_phone = PhoneNumberField(null=True,blank=True)
+    phone = PhoneNumberField(null=True, unique=True, 
+                             validators=[RegexValidator(Constants.PHONE_VALIDATOR_REG_EX)])
+    alternate_phone = PhoneNumberField(null=True,blank=True, 
+                                       validators=[RegexValidator(Constants.PHONE_VALIDATOR_REG_EX)])
     address = models.ForeignKey(
         Address,
         related_name="adress_users",
@@ -201,7 +205,7 @@ class Profile(BaseModel):
         blank=True,
         null=True,
     )
-    role = models.CharField(max_length=50, choices=ROLES, default="USER")
+    role = models.CharField(max_length=50, choices=ROLES, default=Constants.USER)
     has_sales_access = models.BooleanField(default=False)
     has_marketing_access = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -230,7 +234,13 @@ class Profile(BaseModel):
             'is_active' : self.user.is_active,
             'profile_pic' : self.user.profile_pic
         }
-
+    
+    
+    def save(self, *args, **kwargs):
+        # Validate the role
+        if self.role not in dict(ROLES):
+            raise ValidationError(f"Invalid role: {self.role}")
+        super().save(*args, **kwargs)
 
 class Comment(BaseModel):
     case = models.ForeignKey(

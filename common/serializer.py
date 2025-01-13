@@ -18,7 +18,7 @@ from common.models import (
     User,
     AppSettings,
 )
-
+from common.utils import Constants
 
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -372,7 +372,12 @@ class UserCreateSwaggerSerializer(serializers.Serializer):
     """
     It is swagger for creating or updating user
     """
-    ROLE_CHOICES = ["ADMIN", "USER"]
+    ROLE_CHOICES = [
+            Constants.ADMIN, 
+            Constants.SALES_MANAGER,
+            Constants.SALES_REPRESENTATIVE,
+            Constants.USER
+        ]
 
     email = serializers.CharField(max_length=1000, required=True)
     role = serializers.ChoiceField(choices=ROLE_CHOICES, required=True)

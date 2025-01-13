@@ -1,4 +1,5 @@
 from django import template
+from common.utils import Constants
 
 register = template.Library()
 
@@ -601,7 +602,7 @@ def subtract(value, arg):
 
 @register.filter
 def delete_condition(user, task):
-    if user == task.created_by or user.role == "ADMIN":
+    if user == task.created_by or user.role == Constants.ADMIN:
         return True
     return False
 
@@ -610,7 +611,7 @@ def delete_condition(user, task):
 def view_edit_condition(user, task):
     if (
         user == task.created_by
-        or user.role == "ADMIN"
+        or user.role == Constants.ADMIN
         or user.has_sales_access
         or user in task.assigned_to.all()
     ):

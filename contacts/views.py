@@ -15,7 +15,7 @@ from common.serializer import (
     BillingAddressSerializer,
     CommentSerializer,
 )
-from common.utils import COUNTRIES
+from common.utils import COUNTRIES, Constants
 
 #from common.external_auth import CustomDualAuthentication
 from contacts import swagger_params1
@@ -34,7 +34,7 @@ class ContactsListView(APIView, LimitOffsetPagination):
     def get_context_data(self, **kwargs):
         params = self.request.query_params
         queryset = self.model.objects.filter(org=self.request.profile.org).order_by("-id")
-        if self.request.profile.role != "ADMIN" and not self.request.profile.is_admin:
+        if self.request.profile.role != Constants.ADMIN and not self.request.profile.is_admin:
             queryset = queryset.filter(
                 Q(assigned_to__in=[self.request.profile])
                 | Q(created_by=self.request.profile.user)
@@ -177,7 +177,7 @@ class ContactDetailView(APIView):
 
         if contact_serializer.is_valid():
             if (
-                self.request.profile.role != "ADMIN"
+                self.request.profile.role != Constants.ADMIN
                 and not self.request.profile.is_admin
             ):
                 if not (
@@ -257,7 +257,7 @@ class ContactDetailView(APIView):
             user_assgn_list.append(self.request.profile.id)
         if self.request.profile == contact_obj.created_by:
             user_assgn_list.append(self.request.profile.id)
-        if self.request.profile.role != "ADMIN" and not self.request.profile.is_admin:
+        if self.request.profile.role != Constants.ADMIN and not self.request.profile.is_admin:
             if self.request.profile.id not in user_assgn_list:
                 return Response(
                     {
@@ -273,7 +273,7 @@ class ContactDetailView(APIView):
             assigned_dict["name"] = each.user.email
             assigned_data.append(assigned_dict)
 
-        if self.request.profile.is_admin or self.request.profile.role == "ADMIN":
+        if self.request.profile.is_admin or self.request.profile.role == Constants.ADMIN:
             users_mention = list(
                 Profile.objects.filter(is_active=True, org=request.profile.org).values(
                     "user__email"
@@ -317,7 +317,7 @@ class ContactDetailView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
         if (
-            self.request.profile.role != "ADMIN"
+            self.request.profile.role != Constants.ADMIN
             and not self.request.profile.is_admin
             and self.request.profile != self.object.created_by
         ):
@@ -343,7 +343,7 @@ class ContactDetailView(APIView):
         params = request.data
         context = {}
         self.contact_obj = Contact.objects.get(pk=pk)
-        if self.request.profile.role != "ADMIN" and not self.request.profile.is_admin:
+        if self.request.profile.role != Constants.ADMIN and not self.request.profile.is_admin:
             if not (
                 (self.request.profile == self.contact_obj.created_by)
                 or (self.request.profile in self.contact_obj.assigned_to.all())
@@ -403,7 +403,7 @@ class ContactCommentView(APIView):
         params = request.data
         obj = self.get_object(pk)
         if (
-            request.profile.role == "ADMIN"
+            request.profile.role == Constants.ADMIN
             or request.profile.is_admin
             or request.profile == obj.commented_by
         ):
@@ -432,7 +432,7 @@ class ContactCommentView(APIView):
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
         if (
-            request.profile.role == "ADMIN"
+            request.profile.role == Constants.ADMIN
             or request.profile.is_admin
             or request.profile == self.object.commented_by
         ):
@@ -461,7 +461,7 @@ class ContactAttachmentView(APIView):
     def delete(self, request, pk, format=None):
         self.object = self.model.objects.get(pk=pk)
         if (
-            request.profile.role == "ADMIN"
+            request.profile.role == Constants.ADMIN
             or request.profile.is_admin
             or request.profile == self.object.created_by
         ):

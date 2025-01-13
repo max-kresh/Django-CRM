@@ -4,6 +4,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 from common.models import Org,Profile,User
 from django.conf import settings
+from common.utils import Constants
 
 def verify_jwt_token(token):
     secret_key = (settings.SECRET_KEY) # Replace with your secret key used for token encoding/decoding
@@ -42,7 +43,7 @@ class CustomDualAuthentication(BaseAuthentication):
                 organization = Org.objects.get(api_key=api_key)
                 api_key_user = organization
                 request.META['org'] = api_key_user.id
-                profile = Profile.objects.filter(org=api_key_user, role="ADMIN").first()
+                profile = Profile.objects.filter(org=api_key_user, role=Constants.ADMIN).first()
                 request.profile = profile
                 profile = (profile.user, True)
             except Org.DoesNotExist:

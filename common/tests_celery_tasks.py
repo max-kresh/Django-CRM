@@ -20,7 +20,7 @@ from invoices.tests import InvoiceCreateTest
 from leads.tests import TestLeadModel
 from opportunity.tests import OpportunityModel
 from tasks.tests import TaskCreateTest
-
+from common.utils import Constants
 
 class TestCeleryTasks(ObjectsCreation, TestCase):
     @override_settings(
@@ -92,7 +92,7 @@ class TestUserMentionsForAccountComments(AccountCreateTest, TestCase):
             first_name="johnComment",
             username="johnDoeComment",
             email="johnDoeComment@example.com",
-            role="ADMIN",
+            role=Constants.ADMIN,
         )
         self.user_comment.set_password("password")
         self.user_comment.save()
@@ -121,7 +121,7 @@ class TestUserMentionsForContactsComments(ContactObjectsCreation, TestCase):
             first_name="johnComment",
             username="johnDoeComment",
             email="johnDoeComment@example.com",
-            role="ADMIN",
+            role=Constants.ADMIN,
         )
         self.user_comment.set_password("password")
         self.user_comment.save()
@@ -150,7 +150,7 @@ class TestUserMentionsForLeadsComments(TestLeadModel, TestCase):
             first_name="johnComment",
             username="johnDoeComment",
             email="johnDoeComment@example.com",
-            role="ADMIN",
+            role=Constants.ADMIN,
         )
         self.user_comment.set_password("password")
         self.user_comment.save()
@@ -179,7 +179,7 @@ class TestUserMentionsForOpportunityComments(OpportunityModel, TestCase):
             first_name="johnComment",
             username="johnDoeComment",
             email="johnDoeComment@example.com",
-            role="ADMIN",
+            role=Constants.ADMIN,
         )
         self.user_comment.set_password("password")
         self.user_comment.save()
@@ -208,7 +208,7 @@ class TestUserMentionsForCasesComments(CaseCreation, TestCase):
             first_name="johnComment",
             username="johnDoeComment",
             email="johnDoeComment@example.com",
-            role="ADMIN",
+            role=Constants.ADMIN,
         )
         self.user_comment.set_password("password")
         self.user_comment.save()
@@ -237,7 +237,7 @@ class TestUserMentionsForTasksComments(TaskCreateTest, TestCase):
             first_name="johnComment",
             username="johnDoeComment",
             email="johnDoeComment@example.com",
-            role="ADMIN",
+            role=Constants.ADMIN,
         )
         self.user_comment.set_password("password")
         self.user_comment.save()
@@ -266,7 +266,7 @@ class TestUserMentionsForInvoiceComments(InvoiceCreateTest, TestCase):
             first_name="johnComment",
             username="johnDoeComment",
             email="johnDoeComment@example.com",
-            role="ADMIN",
+            role=Constants.ADMIN,
         )
         self.user_comment.set_password("password")
         self.user_comment.save()
@@ -295,7 +295,7 @@ class TestUserMentionsForEventsComments(EventObjectTest, TestCase):
             first_name="johnComment",
             username="johnDoeComment",
             email="johnDoeComment@example.com",
-            role="ADMIN",
+            role=Constants.ADMIN,
         )
         self.user_comment.set_password("password")
         self.user_comment.save()
