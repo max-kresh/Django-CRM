@@ -997,7 +997,8 @@ class GoogleLoginView(APIView):
         response['access_token'] = str(token.access_token)
         response['refresh_token'] = str(token)
         response['user_id'] = user.id
-        response['role'] = user.profile.first().role
+        if user.profile.exists():
+            response['role'] = user.profile.first().role
         return Response(response)
     
 
