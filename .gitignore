@@ -26,4 +26,5 @@ server.log
 .vscode
 staticfiles
 .venv
+/venv
 data/
