@@ -3,6 +3,7 @@ from django.db.models import Q
 
 from accounts.models import Account
 from common.models import Address, Attachments, Comment, User
+from common.utils import Constants
 from invoices.models import Invoice
 from teams.models import Teams
 
@@ -37,7 +38,7 @@ class InvoiceForm(forms.ModelForm):
         #     self.fields['assigned_to'].queryset = User.objects.none()
         #     self.fields['accounts'].queryset = Account.objects.filter(status='open').filter(
         #         Q(created_by=request_user) | Q(assigned_to=request_user))
-        elif request_user.role == "USER":
+        elif request_user.role == Constants.USER:
             self.fields["assigned_to"].queryset = User.objects.filter(
                 role="ADMIN", company=request_obj.company
             )

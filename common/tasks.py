@@ -56,6 +56,7 @@ def send_email_to_new_user(user_id):
         )
         msg.content_subtype = "html"
         msg.send()
+        print("mail sent: ", context["complete_url"])
 
 
 @app.task

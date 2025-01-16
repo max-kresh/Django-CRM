@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 from accounts.models import Account
 from accounts.serializer import AccountSerializer
 from common.models import Attachments, Comment, User
+from common.utils import Constants
 
 #from common.external_auth import CustomDualAuthentication
 from common.serializer import (
@@ -58,7 +59,7 @@ class InvoiceListView(APIView, LimitOffsetPagination):
         params = self.request.query_params
         queryset = self.model.objects.filter(company=self.request.company)
         accounts = Account.objects.filter(company=self.request.company)
-        if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.user.role != Constants.ADMIN and not self.request.user.is_superuser:
             queryset = queryset.filter(
                 Q(created_by=self.request.user) | Q(assigned_to=self.request.user)
             ).distinct()
@@ -121,7 +122,7 @@ class InvoiceListView(APIView, LimitOffsetPagination):
             many=True,
         ).data
         context["accounts_list"] = AccountSerializer(accounts, many=True).data
-        if self.request.user == "ADMIN":
+        if self.request.user == Constants.ADMIN:
             context["teams_list"] = TeamsSerializer(
                 Teams.objects.filter(company=self.request.company), many=True
             ).data
@@ -196,7 +197,7 @@ class InvoiceListView(APIView, LimitOffsetPagination):
                         data["accounts"] = "Please enter valid account"
                         return Response({"error": True}, data)
 
-            if self.request.user.role == "ADMIN":
+            if self.request.user.role == Constants.ADMIN:
                 if params.get("teams"):
                     teams = params.get("teams")
                     for team in teams:
@@ -261,7 +262,7 @@ class InvoiceDetailView(APIView):
                 {"error": True, "errors": "User company doesnot match with header...."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.user.role != Constants.ADMIN and not self.request.user.is_superuser:
             if not (
                 (self.request.user == invoice_obj.created_by)
                 or (self.request.user in invoice_obj.assigned_to.all())
@@ -336,7 +337,7 @@ class InvoiceDetailView(APIView):
                         data["accounts"] = "Please enter valid account"
                         return Response({"error": True}, data)
 
-            if self.request.user.role == "ADMIN":
+            if self.request.user.role == Constants.ADMIN:
                 invoice_obj.teams.clear()
                 if params.get("teams"):
                     teams = params.get("teams")
@@ -389,7 +390,7 @@ class InvoiceDetailView(APIView):
             return Response(
                 {"error": True, "errors": "User company doesnot match with header...."}
             )
-        if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.user.role != Constants.ADMIN and not self.request.user.is_superuser:
             if self.request.user != self.object.created_by:
                 return Response(
                     {
@@ -419,7 +420,7 @@ class InvoiceDetailView(APIView):
             )
         context = {}
         context["invoice_obj"] = InvoiceSerailizer(self.invoice).data
-        if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.user.role != Constants.ADMIN and not self.request.user.is_superuser:
             if not (
                 (self.request.user == self.invoice.created_by)
                 or (self.request.user in self.invoice.assigned_to.all())
@@ -436,12 +437,12 @@ class InvoiceDetailView(APIView):
             if (
                 self.request.user == self.invoice.created_by
                 or self.request.user.is_superuser
-                or self.request.user.role == "ADMIN"
+                or self.request.user.role == Constants.ADMIN
             )
             else False
         )
 
-        if self.request.user.is_superuser or self.request.user.role == "ADMIN":
+        if self.request.user.is_superuser or self.request.user.role == Constants.ADMIN:
             users_mention = list(
                 User.objects.filter(
                     is_active=True,
@@ -497,7 +498,7 @@ class InvoiceDetailView(APIView):
             )
 
         comment_serializer = CommentSerializer(data=params)
-        if self.request.user.role != "ADMIN" and not self.request.user.is_superuser:
+        if self.request.user.role != Constants.ADMIN and not self.request.user.is_superuser:
             if not (
                 (self.request.user == self.invoice_obj.created_by)
                 or (self.request.user in self.invoice_obj.assigned_to.all())
@@ -553,7 +554,7 @@ class InvoiceCommentView(APIView):
         params = request.data
         obj = self.get_object(pk)
         if (
-            request.user.role == "ADMIN"
+            request.user.role == Constants.ADMIN
             or request.user.is_superuser
             or request.user == obj.commented_by
         ):
@@ -583,7 +584,7 @@ class InvoiceCommentView(APIView):
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
         if (
-            request.user.role == "ADMIN"
+            request.user.role == Constants.ADMIN
             or request.user.is_superuser
             or request.user == self.object.commented_by
         ):
@@ -612,7 +613,7 @@ class InvoiceAttachmentView(APIView):
     def delete(self, request, pk, format=None):
         self.object = self.model.objects.get(pk=pk)
         if (
-            request.user.role == "ADMIN"
+            request.user.role == Constants.ADMIN
             or request.user.is_superuser
             or request.user == self.object.created_by
         ):

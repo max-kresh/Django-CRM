@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from accounts.models import Account
 from common.models import Address, Attachments, Comment, Company, User
+from common.utils import Constants
 from invoices.models import Invoice, InvoiceHistory
 from teams.models import Teams
 
@@ -22,7 +23,7 @@ class InvoiceCreateTest(object):
             first_name="johnInvoice",
             username="johnDoeInvoice",
             email="johnDoeInvoice@example.com",
-            role="ADMIN",
+            role=Constants.ADMIN,
             company=self.company,
         )
         self.user.set_password("password")
@@ -32,7 +33,7 @@ class InvoiceCreateTest(object):
             first_name="janeInvoice",
             username="janeDoeInvoice",
             email="janeDoeInvoice@example.com",
-            role="USER",
+            role=Constants.USER,
             has_sales_access=True,
             company=self.company,
         )
@@ -43,7 +44,7 @@ class InvoiceCreateTest(object):
             first_name="joeInvoice",
             username="joeInvoice",
             email="joeInvoice@example.com",
-            role="USER",
+            role=Constants.USER,
             has_sales_access=True,
             company=self.company,
         )
