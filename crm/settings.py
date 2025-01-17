@@ -37,19 +37,6 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
-    "wagtail.contrib.forms",
-    "wagtail.contrib.redirects",
-    "wagtail.embeds",
-    "wagtail.sites",
-    "wagtail.users",
-    "wagtail.snippets",
-    "wagtail.documents",
-    "wagtail.images",
-    "wagtail.search",
-    "wagtail.admin",
-    "wagtail",
-    "cms",
-    "wagtail.contrib.settings",
     "modelcluster",
     "taggit",
     "django.contrib.auth",
@@ -89,7 +76,6 @@ MIDDLEWARE = [
     "crum.CurrentRequestUserMiddleware",
     # "common.external_auth.CustomDualAuthentication"
     "common.middleware.get_company.GetProfileAndOrg",
-    "wagtail.contrib.redirects.middleware.RedirectMiddleware",
 ]
 
 ROOT_URLCONF = "crm.urls"
@@ -109,7 +95,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "common.context_processors.common.app_name",
                 # "django_settings_export.settings_export",
-                "wagtail.contrib.settings.context_processors.settings",
+                
             ],
         },
     },
@@ -251,9 +237,6 @@ LOGGING = {
 
 APPLICATION_NAME = "bottlecrm"
 
-WAGTAIL_SITE_NAME = "bottlecrm"
-
-WAGTAILADMIN_BASE_URL = "https://bottlecrm.com"
 
 SETTINGS_EXPORT = ["APPLICATION_NAME"]
 
