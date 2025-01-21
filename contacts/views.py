@@ -108,7 +108,7 @@ class ContactsListView(APIView, LimitOffsetPagination):
         contact_obj = contact_serializer.save(date_of_birth=params.get("date_of_birth"))
         contact_obj.category = None
         contact_obj.address = address_obj
-        contact_obj.org = request.profile.org
+        contact_obj.org = request.user.profile.first().org
         contact_obj.save()
 
         if params.get("teams"):

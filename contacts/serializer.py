@@ -68,7 +68,9 @@ class CreateContactSerializer(serializers.ModelSerializer):
         request_obj = kwargs.pop("request_obj", None)
         super().__init__(*args, **kwargs)
         if request_obj:
-            self.org = request_obj.profile.org
+            # self.org = request_obj.profile.org
+            self.org = request_obj.user.profile.first().org
+            
 
     def validate_first_name(self, first_name):
         if self.instance:
