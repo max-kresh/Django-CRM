@@ -149,7 +149,8 @@ class ContactDetailView(APIView):
         return get_object_or_404(Contact, pk=pk)
 
     @extend_schema(
-        tags=["contacts"], parameters=swagger_params1.contact_create_post_params,request=CreateContactSerializer
+        # tags=["contacts"], parameters=swagger_params1.contact_create_post_params,request=CreateContactSerializer
+         tags=["contacts"], parameters=swagger_params1.organization_params,request=CreateContactSerializer
     )
     def put(self, request, pk, format=None):
         data = request.data
