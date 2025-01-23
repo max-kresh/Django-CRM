@@ -125,6 +125,10 @@ class Lead(BaseModel):
         user_ids = set(assigned_user_ids) - set(team_user_ids)
         return Profile.objects.filter(id__in=list(user_ids))
 
+    @property
+    def get_contacts_list(self):
+        return list(self.contacts.all())
+
     # def save(self, *args, **kwargs):
     #     super(Lead, self).save(*args, **kwargs)
     #     queryset = Lead.objects.all().exclude(status='converted').select_related('created_by'

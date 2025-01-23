@@ -5,9 +5,8 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 from common.models import Address, Org, Profile
 from common.base import BaseModel
-from common.utils import COUNTRIES
+from common.utils import COUNTRIES, CONTACT_STAGES
 from teams.models import Teams
-
 
 class Contact(BaseModel):
     salutation = models.CharField(
@@ -44,6 +43,7 @@ class Contact(BaseModel):
     teams = models.ManyToManyField(Teams, related_name="contact_teams")
     org = models.ForeignKey(Org, on_delete=models.SET_NULL, null=True, blank=True)
     country = models.CharField(max_length=3, choices=COUNTRIES, blank=True, null=True)
+    stage = models.CharField(max_length=11, choices=CONTACT_STAGES, blank=False, null=True)
 
     class Meta:
         verbose_name = "Contact"
