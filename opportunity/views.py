@@ -26,7 +26,7 @@ from opportunity.models import Opportunity
 from opportunity.serializer import *
 from opportunity.tasks import send_email_to_assigned_user
 from teams.models import Teams
-
+from contacts.utils import update_contacts_stage
 
 class OpportunityListView(APIView, LimitOffsetPagination):
 
@@ -122,6 +122,7 @@ class OpportunityListView(APIView, LimitOffsetPagination):
                 contacts_list = params.get("contacts")
                 contacts = Contact.objects.filter(id__in=contacts_list, org=request.profile.org)
                 opportunity_obj.contacts.add(*contacts)
+                update_contacts_stage(contacts)
 
             if params.get("tags"):
                 tags = params.get("tags")
@@ -194,6 +195,7 @@ class OpportunityDetailView(APIView):
     def put(self, request, pk, format=None):
         params = request.data
         opportunity_object = self.get_object(pk=pk)
+        contacts_new_old = opportunity_object.get_contacts_list
         if opportunity_object.org != request.profile.org:
             return Response(
                 {"error": True, "errors": "User company doesnot match with header...."},
@@ -229,7 +231,8 @@ class OpportunityDetailView(APIView):
                 contacts_list = params.get("contacts")
                 contacts = Contact.objects.filter(id__in=contacts_list, org=request.profile.org)
                 opportunity_object.contacts.add(*contacts)
-
+                contacts_new_old.extend(contacts.all())
+            update_contacts_stage(contacts_new_old)
             opportunity_object.tags.clear()
             if params.get("tags"):
                 tags = params.get("tags")
@@ -306,7 +309,9 @@ class OpportunityDetailView(APIView):
                     },
                     status=status.HTTP_403_FORBIDDEN,
                 )
+        contacts = self.object.get_contacts_list
         self.object.delete()
+        update_contacts_stage(contacts)
         return Response(
             {"error": False, "message": "Opportunity Deleted Successfully."},
             status=status.HTTP_200_OK,

@@ -139,6 +139,11 @@ class Account(BaseModel):
         user_ids = set(assigned_user_ids) - set(team_user_ids)
         return Profile.objects.filter(id__in=list(user_ids))
 
+    @property
+    def get_contacts_list(self):
+        contacts_list = list(self.contacts.all())
+        return contacts_list
+
 
 class AccountEmail(BaseModel):
     from_account = models.ForeignKey(
@@ -161,6 +166,7 @@ class AccountEmail(BaseModel):
 
     def __str__(self):
         return f"{self.message_subject}"
+
 
 class AccountEmailLog(BaseModel):
     """this model is used to track if the email is sent or not"""

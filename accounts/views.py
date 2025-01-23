@@ -32,6 +32,7 @@ from cases.serializer import CaseSerializer
 from common.models import Attachments, Comment, Profile
 from leads.models import Lead
 from leads.serializer import LeadSerializer
+from contacts.utils import update_contacts_stage
 
 #from common.external_auth import CustomDualAuthentication
 from common.serializer import (
@@ -164,10 +165,11 @@ class AccountsListView(APIView, LimitOffsetPagination):
                 org=request.profile.org
             )
             if data.get("contacts"):
-                contacts_list = json.loads(data.get("contacts"))
+                contacts_list = data.get("contacts")
                 contacts = Contact.objects.filter(id__in=contacts_list, org=request.profile.org)
                 if contacts:
                     account_object.contacts.add(*contacts)
+                    update_contacts_stage(contacts)
             if data.get("tags"):
                 tags = json.loads(data.get("tags"))
                 for tag in tags:
@@ -227,6 +229,7 @@ class AccountDetailView(APIView):
     def put(self, request, pk, format=None):
         data = request.data
         account_object = self.get_object(pk=pk)
+        contacts_new_and_old = account_object.get_contacts_list or []
         if account_object.org != request.profile.org:
             return Response(
                 {"error": True, "errors": "User company doesnot match with header...."},
@@ -256,17 +259,18 @@ class AccountDetailView(APIView):
             previous_assigned_to_users = list(
                 account_object.assigned_to.all().values_list("id", flat=True)
             )
-
             account_object.contacts.clear()
             if data.get("contacts"):
-                contacts_list = json.loads(data.get("contacts"))
+                contacts_list = data.get("contacts")
                 contacts = Contact.objects.filter(id__in=contacts_list, org=request.profile.org)
+                contacts_new_and_old.extend(list(contacts.all()))
                 if contacts:
                     account_object.contacts.add(*contacts)
+            update_contacts_stage(contacts_new_and_old)
 
             account_object.tags.clear()
             if data.get("tags"):
-                tags = json.loads(data.get("tags"))
+                tags = data.get("tags")
                 for tag in tags:
                     tag_obj = Tags.objects.filter(slug=tag.lower())
                     if tag_obj.exists():
@@ -277,14 +281,14 @@ class AccountDetailView(APIView):
 
             account_object.teams.clear()
             if data.get("teams"):
-                teams_list = json.loads(data.get("teams"))
+                teams_list = data.get("teams")
                 teams = Teams.objects.filter(id__in=teams_list, org=request.profile.org)
                 if teams:
                     account_object.teams.add(*teams)
 
             account_object.assigned_to.clear()
             if data.get("assigned_to"):
-                assigned_to_list = json.loads(data.get("assigned_to"))
+                assigned_to_list = data.get("assigned_to")
                 profiles = Profile.objects.filter(
                     id__in=assigned_to_list, org=request.profile.org, is_active=True
                 )
@@ -333,7 +337,9 @@ class AccountDetailView(APIView):
                     },
                     status=status.HTTP_403_FORBIDDEN,
                 )
+        contacts = self.object.get_contacts_list
         self.object.delete()
+        update_contacts_stage(contacts)
         return Response(
             {"error": False, "message": "Account Deleted Successfully."},
             status=status.HTTP_200_OK,

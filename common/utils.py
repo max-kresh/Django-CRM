@@ -159,6 +159,11 @@ EVENT_STATUS = (
     ("Deferred", "Deferred"),
 )
 
+CONTACT_STAGES = (
+    ("Lead", "Lead"),
+    ("Opportunity", "Opportunity"),
+    ("Account", "Account"),
+)
 
 COUNTRIES = (
     ("GB", _("United Kingdom")),

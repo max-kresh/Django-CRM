@@ -44,7 +44,7 @@ from leads.tasks import (
 )
 from teams.models import Teams
 from teams.serializer import TeamsSerializer
-
+from contacts.utils import update_contacts_stage
 
 class LeadListView(APIView, LimitOffsetPagination):
     model = Lead
@@ -156,8 +156,6 @@ class LeadListView(APIView, LimitOffsetPagination):
         tags=["Leads"],description="Leads Create", parameters=swagger_params1.organization_params,request=LeadCreateSwaggerSerializer
     )
     def post(self, request, *args, **kwargs):
-
-        print('test')
         data = request.data
         serializer = LeadCreateSerializer(data=data, request_obj=request)
         if serializer.is_valid():
@@ -178,6 +176,7 @@ class LeadListView(APIView, LimitOffsetPagination):
                     id__in=data.get("contacts"), org=request.profile.org
                 )
                 lead_obj.contacts.add(*obj_contact)
+                update_contacts_stage(obj_contact)
 
             recipients = list(lead_obj.assigned_to.all().values_list("id", flat=True))
             send_email_to_assigned_user.delay(
@@ -417,6 +416,7 @@ class LeadDetailView(APIView):
     def put(self, request, pk, **kwargs):
         params = request.data
         self.lead_obj = self.get_object(pk)
+        contacts_new_old = self.lead_obj.get_contacts_list
         if self.lead_obj.org != request.profile.org:
             return Response(
                 {
@@ -470,7 +470,9 @@ class LeadDetailView(APIView):
                 obj_contact = Contact.objects.filter(
                     id=params.get("contacts"), org=request.profile.org
                 )
-                lead_obj.contacts.add(obj_contact)
+                lead_obj.contacts.add(*obj_contact)
+                contacts_new_old.extend(obj_contact.all())
+            update_contacts_stage(contacts_new_old)
 
             lead_obj.teams.clear()
             if params.get("teams"):
@@ -551,7 +553,9 @@ class LeadDetailView(APIView):
             or request.profile.user
              == self.object.created_by
         ) and self.object.org == request.profile.org:
+            contacts = self.object.get_contacts_list
             self.object.delete()
+            update_contacts_stage(contacts)
             return Response(
                 {"error": False, "message": "Lead deleted Successfully"},
                 status=status.HTTP_200_OK,
