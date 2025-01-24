@@ -70,8 +70,13 @@ class CreateContactSerializer(serializers.ModelSerializer):
         if request_obj:
             # self.org = request_obj.profile.org
             self.org = request_obj.user.profile.first().org
-            
-
+    
+    # The validation of the first name is cancelled. Because this method enforces that 
+    # there can not be multiple contacts with the same first name. In reality organizations
+    # can have multiple contacts with first name and even with first and last name. Uniques of 
+    # some other fields (e.g. primary email and phone) are already constrained by the model.
+    # (Mithat and Yunus IT-22)
+    # 
     # def validate_first_name(self, first_name):
     #     if self.instance:
     #         if (
