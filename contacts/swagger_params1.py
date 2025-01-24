@@ -12,7 +12,11 @@ organization_params = [
 contact_list_get_params = [
     organization_params_in_header,
     OpenApiParameter("name", OpenApiTypes.STR,OpenApiParameter.QUERY),
+    OpenApiParameter("email", OpenApiTypes.STR,OpenApiParameter.QUERY),
+    OpenApiParameter("phone", OpenApiTypes.STR,OpenApiParameter.QUERY),
     OpenApiParameter("city", OpenApiTypes.STR,OpenApiParameter.QUERY),
+    OpenApiParameter("street", OpenApiTypes.STR,OpenApiParameter.QUERY),
+    OpenApiParameter("postcode", OpenApiTypes.STR,OpenApiParameter.QUERY),
     OpenApiParameter("assigned_to", OpenApiTypes.STR,OpenApiParameter.QUERY),
 ]
 

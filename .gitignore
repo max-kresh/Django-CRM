@@ -27,3 +27,4 @@ server.log
 staticfiles
 .venv
 data/
+venv/
