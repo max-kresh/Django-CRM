@@ -48,7 +48,7 @@ class ContactsListView(APIView, LimitOffsetPagination):
             if params.get("street"):
                 queryset = queryset.filter(address__street__icontains=params.get("street"))
             if params.get("postcode"):
-                queryset = queryset.filter(address__postcode__icontains=params.get("street"))
+                queryset = queryset.filter(address__postcode__icontains=params.get("postcode"))
             if params.get("phone"):
                 queryset = queryset.filter(Q(mobile_number__icontains=params.get("phone")) | Q(secondary_number__icontains=params.get("phone")))
             if params.get("email"):
