@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='contact',
-            name='stage',
+            name='category',
             field=models.CharField(choices=[('Lead', 'Lead'), ('Opportunity', 'Opportunity'), ('Account', 'Account')], max_length=11, null=True),
         ),
     ]

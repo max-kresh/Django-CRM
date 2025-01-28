@@ -106,6 +106,7 @@ class ContactsListView(APIView, LimitOffsetPagination):
         # if contact_serializer.is_valid() and address_serializer.is_valid():
         address_obj = address_serializer.save()
         contact_obj = contact_serializer.save(date_of_birth=params.get("date_of_birth"))
+        contact_obj.category = None
         contact_obj.address = address_obj
         contact_obj.org = request.profile.org
         contact_obj.save()

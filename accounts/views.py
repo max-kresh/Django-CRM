@@ -32,7 +32,7 @@ from cases.serializer import CaseSerializer
 from common.models import Attachments, Comment, Profile
 from leads.models import Lead
 from leads.serializer import LeadSerializer
-from contacts.utils import update_contacts_stage
+from contacts.utils import update_contacts_category
 
 #from common.external_auth import CustomDualAuthentication
 from common.serializer import (
@@ -169,7 +169,7 @@ class AccountsListView(APIView, LimitOffsetPagination):
                 contacts = Contact.objects.filter(id__in=contacts_list, org=request.profile.org)
                 if contacts:
                     account_object.contacts.add(*contacts)
-                    update_contacts_stage(contacts)
+                    update_contacts_category(contacts)
             if data.get("tags"):
                 tags = json.loads(data.get("tags"))
                 for tag in tags:
@@ -266,7 +266,7 @@ class AccountDetailView(APIView):
                 contacts_new_and_old.extend(list(contacts.all()))
                 if contacts:
                     account_object.contacts.add(*contacts)
-            update_contacts_stage(contacts_new_and_old)
+            update_contacts_category(contacts_new_and_old)
 
             account_object.tags.clear()
             if data.get("tags"):
@@ -339,7 +339,7 @@ class AccountDetailView(APIView):
                 )
         contacts = self.object.get_contacts_list
         self.object.delete()
-        update_contacts_stage(contacts)
+        update_contacts_category(contacts)
         return Response(
             {"error": False, "message": "Account Deleted Successfully."},
             status=status.HTTP_200_OK,

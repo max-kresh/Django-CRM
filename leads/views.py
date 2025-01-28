@@ -44,7 +44,7 @@ from leads.tasks import (
 )
 from teams.models import Teams
 from teams.serializer import TeamsSerializer
-from contacts.utils import update_contacts_stage
+from contacts.utils import update_contacts_category
 
 class LeadListView(APIView, LimitOffsetPagination):
     model = Lead
@@ -176,7 +176,7 @@ class LeadListView(APIView, LimitOffsetPagination):
                     id__in=data.get("contacts"), org=request.profile.org
                 )
                 lead_obj.contacts.add(*obj_contact)
-                update_contacts_stage(obj_contact)
+                update_contacts_category(obj_contact)
 
             recipients = list(lead_obj.assigned_to.all().values_list("id", flat=True))
             send_email_to_assigned_user.delay(
@@ -472,7 +472,7 @@ class LeadDetailView(APIView):
                 )
                 lead_obj.contacts.add(*obj_contact)
                 contacts_new_old.extend(obj_contact.all())
-            update_contacts_stage(contacts_new_old)
+            update_contacts_category(contacts_new_old)
 
             lead_obj.teams.clear()
             if params.get("teams"):
@@ -555,7 +555,7 @@ class LeadDetailView(APIView):
         ) and self.object.org == request.profile.org:
             contacts = self.object.get_contacts_list
             self.object.delete()
-            update_contacts_stage(contacts)
+            update_contacts_category(contacts)
             return Response(
                 {"error": False, "message": "Lead deleted Successfully"},
                 status=status.HTTP_200_OK,

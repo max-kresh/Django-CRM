@@ -59,7 +59,7 @@ class ContactSerializer(serializers.ModelSerializer):
             "get_team_and_assigned_users",
             "get_assigned_users_not_in_teams",
             "org",
-            "stage"
+            "category"
         )
 
 
