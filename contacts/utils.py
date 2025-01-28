@@ -4,16 +4,16 @@ from leads.models import Lead
 from opportunity.models import Opportunity
 from contacts.models import Contact
 
-def update_contacts_stage(contacts: Iterable[Contact]):
+def update_contacts_category(contacts: Iterable[Contact]):
     for contact in contacts:
-        update_contact_stage(contact)
+        update_contact_category(contact)
 
-def update_contact_stage(contact: Contact):
-    contact.stage = None
-    if Account.objects.filter(contacts__id=contact.id):
-        contact.stage = "Account"
-    elif Opportunity.objects.filter(contacts__id=contact.id):
-        contact.stage = "Opportunity"
-    elif Lead.objects.filter(contacts__id=contact.id):
-        contact.stage = "Lead"
+def update_contact_category(contact: Contact):
+    contact.category = None
+    if Account.objects.filter(contacts__id=contact.id).exists():
+        contact.category = "Account"
+    elif Opportunity.objects.filter(contacts__id=contact.id).exists():
+        contact.category = "Opportunity"
+    elif Lead.objects.filter(contacts__id=contact.id).exists():
+        contact.category = "Lead"
     contact.save()

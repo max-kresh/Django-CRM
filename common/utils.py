@@ -159,7 +159,7 @@ EVENT_STATUS = (
     ("Deferred", "Deferred"),
 )
 
-CONTACT_STAGES = (
+CONTACT_CATEGORIES = (
     ("Lead", "Lead"),
     ("Opportunity", "Opportunity"),
     ("Account", "Account"),
