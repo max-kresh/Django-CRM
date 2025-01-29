@@ -105,14 +105,21 @@ WSGI_APPLICATION = "crm.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
+def is_running_in_docker():
+    try:
+        with open('/proc/self/cgroup', 'r') as f:
+            return 'docker' in f.read()
+    except FileNotFoundError:
+        return False
 
+db_host = os.environ["DBHOST"] if is_running_in_docker() else "localhost"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ["DBNAME"],
         "USER": os.environ["DBUSER"],
         "PASSWORD": os.environ["DBPASSWORD"],
-        "HOST": os.environ["DBHOST"],
+        "HOST": db_host,
         "PORT": os.environ["DBPORT"],
     }
 }
