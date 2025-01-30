@@ -68,7 +68,6 @@ class GetProfileAndOrg(object):
                 # Frontend app sends id of the org and Swagger UI sends name 
                 # of the org. This blog is changed to meet both sides.
                 org=request.headers.get("org")
-                print(org)
                 if org:
                     profile = None
                     try: 
