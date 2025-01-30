@@ -106,8 +106,9 @@ class ContactsListView(APIView, LimitOffsetPagination):
         # if contact_serializer.is_valid() and address_serializer.is_valid():
         address_obj = address_serializer.save()
         contact_obj = contact_serializer.save(date_of_birth=params.get("date_of_birth"))
+        contact_obj.category = None
         contact_obj.address = address_obj
-        contact_obj.org = request.profile.org
+        contact_obj.org = request.user.profile.first().org
         contact_obj.save()
 
         if params.get("teams"):
@@ -148,7 +149,8 @@ class ContactDetailView(APIView):
         return get_object_or_404(Contact, pk=pk)
 
     @extend_schema(
-        tags=["contacts"], parameters=swagger_params1.contact_create_post_params,request=CreateContactSerializer
+        # tags=["contacts"], parameters=swagger_params1.contact_create_post_params,request=CreateContactSerializer
+         tags=["contacts"], parameters=swagger_params1.organization_params,request=CreateContactSerializer
     )
     def put(self, request, pk, format=None):
         data = request.data

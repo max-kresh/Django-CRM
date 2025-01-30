@@ -59,6 +59,7 @@ class ContactSerializer(serializers.ModelSerializer):
             "get_team_and_assigned_users",
             "get_assigned_users_not_in_teams",
             "org",
+            "category"
         )
 
 
@@ -67,27 +68,34 @@ class CreateContactSerializer(serializers.ModelSerializer):
         request_obj = kwargs.pop("request_obj", None)
         super().__init__(*args, **kwargs)
         if request_obj:
-            self.org = request_obj.profile.org
+            # self.org = request_obj.profile.org
+            self.org = request_obj.user.profile.first().org
+    
+    # The validation of the first name is cancelled. Because this method enforces that 
+    # there can not be multiple contacts with the same first name. In reality organizations
+    # can have multiple contacts with first name and even with first and last name. Uniques of 
+    # some other fields (e.g. primary email and phone) are already constrained by the model.
+    # (Mithat and Yunus IT-22)
+    # 
+    # def validate_first_name(self, first_name):
+    #     if self.instance:
+    #         if (
+    #             Contact.objects.filter(first_name__iexact=first_name, org=self.org)
+    #             .exclude(id=self.instance.id)
+    #             .exists()
+    #         ):
+    #             raise serializers.ValidationError(
+    #                 "Contact already exists with this name"
+    #             )
 
-    def validate_first_name(self, first_name):
-        if self.instance:
-            if (
-                Contact.objects.filter(first_name__iexact=first_name, org=self.org)
-                .exclude(id=self.instance.id)
-                .exists()
-            ):
-                raise serializers.ValidationError(
-                    "Contact already exists with this name"
-                )
-
-        else:
-            if Contact.objects.filter(
-                first_name__iexact=first_name, org=self.org
-            ).exists():
-                raise serializers.ValidationError(
-                    "Contact already exists with this name"
-                )
-        return first_name
+    #     else:
+    #         if Contact.objects.filter(
+    #             first_name__iexact=first_name, org=self.org
+    #         ).exists():
+    #             raise serializers.ValidationError(
+    #                 "Contact already exists with this name"
+    #             )
+    #     return first_name
 
     class Meta:
         model = Contact

@@ -2,10 +2,11 @@ import arrow
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
+from django.core.validators import RegexValidator
 
 from common.models import Address, Org, Profile
 from common.base import BaseModel
-from common.utils import COUNTRIES
+from common.utils import COUNTRIES, CONTACT_CATEGORIES, Constants
 from teams.models import Teams
 
 
@@ -20,8 +21,8 @@ class Contact(BaseModel):
     title = models.CharField(_("Title"), max_length=255, default="", blank=True)
     primary_email = models.EmailField(unique=True)
     secondary_email = models.EmailField(default="", blank=True)
-    mobile_number = PhoneNumberField(null=True, unique=True)
-    secondary_number = PhoneNumberField(null=True,blank=True)
+    mobile_number = PhoneNumberField(null=True, unique=True, validators=[RegexValidator(Constants.PHONE_VALIDATOR_REG_EX)])
+    secondary_number = PhoneNumberField(null=True,blank=True, validators=[RegexValidator(Constants.PHONE_VALIDATOR_REG_EX)])
     department = models.CharField(_("Department"), max_length=255, null=True)
     language = models.CharField(_("Language"), max_length=255, null=True)
     do_not_call = models.BooleanField(default=False)
@@ -44,6 +45,7 @@ class Contact(BaseModel):
     teams = models.ManyToManyField(Teams, related_name="contact_teams")
     org = models.ForeignKey(Org, on_delete=models.SET_NULL, null=True, blank=True)
     country = models.CharField(max_length=3, choices=COUNTRIES, blank=True, null=True)
+    category = models.CharField(max_length=11, choices=CONTACT_CATEGORIES, blank=False, null=True)
 
     class Meta:
         verbose_name = "Contact"
