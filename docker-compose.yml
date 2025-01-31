@@ -4,6 +4,7 @@ services:
       context: .
     container_name: django-app
     volumes:
+      - .:/usr/src/app
       - /var/log/docker/django-app:/var/log/django-app
     working_dir: /usr/src/app
     environment:
