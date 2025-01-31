@@ -15,7 +15,7 @@ from common.serializer import (
     BillingAddressSerializer,
     CommentSerializer,
 )
-from common.utils import COUNTRIES, Constants
+from common.utils import CONTACT_CATEGORIES, COUNTRIES, Constants
 
 #from common.external_auth import CustomDualAuthentication
 from contacts import swagger_params1
@@ -41,14 +41,21 @@ class ContactsListView(APIView, LimitOffsetPagination):
             ).distinct()
 
         if params:
+            if params.get("email"):
+                queryset = queryset.filter(Q(primary_email__icontains=params.get("email")) | Q(secondary_email__icontains=params.get("email")))
+            if params.get("phone"):
+                queryset = queryset.filter(Q(mobile_number__icontains=params.get("phone")) | Q(secondary_number__icontains=params.get("phone")))
+            if params.get("category") and params.get("category") in CONTACT_CATEGORIES:
+                queryset = queryset.filter(category__icontains=params.get("category"))
             if params.get("name"):
                 queryset = queryset.filter(first_name__icontains=params.get("name"))
+            if params.get("postcode"):
+                queryset = queryset.filter(address__postcode__icontains=params.get("postcode"))
             if params.get("city"):
                 queryset = queryset.filter(address__city__icontains=params.get("city"))
-            if params.get("phone"):
-                queryset = queryset.filter(mobile_number__icontains=params.get("phone"))
-            if params.get("email"):
-                queryset = queryset.filter(primary_email__icontains=params.get("email"))
+            
+            
+            
             if params.getlist("assigned_to"):
                 queryset = queryset.filter(
                     assigned_to__id__in=params.get("assigned_to")
