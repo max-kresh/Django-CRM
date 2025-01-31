@@ -9,12 +9,29 @@ services:
     working_dir: /usr/src/app
     environment:
       - RUNNING_IN_DOCKER=true
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
     ports:
       - "8000:8000"
     depends_on:
       - db
+      - redis
     env_file:
       - .env  # Use .env file for environment variables
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+  celery:
+    build:
+      context: .
+    container_name: celery-worker
+    command: celery -A crm worker -l INFO
+    depends_on:
+      - redis
+      - db
+    env_file:
+      - .env
   db:
     image: postgres
     container_name: postgres-db

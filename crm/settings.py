@@ -105,7 +105,7 @@ WSGI_APPLICATION = "crm.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
-RUNNING_IN_DOCKER = os.getenv("RUNNING_IN_DOCKER", "false").lower() == "true"
+
 
 DATABASES = {
     "default": {
@@ -113,7 +113,7 @@ DATABASES = {
         "NAME": os.environ["DBNAME"],
         "USER": os.environ["DBUSER"],
         "PASSWORD": os.environ["DBPASSWORD"],
-        "HOST": os.environ["DBHOST"] if RUNNING_IN_DOCKER else "localhost",
+        "HOST": os.environ["DBHOST"] ,
         "PORT": os.environ["DBPORT"],
     }
 }
@@ -172,8 +172,8 @@ EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
 
 
 # celery Tasks
-CELERY_BROKER_URL = os.environ["CELERY_BROKER_URL"]
-CELERY_RESULT_BACKEND = os.environ["CELERY_RESULT_BACKEND"]
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
 
 
 LOGGING = {

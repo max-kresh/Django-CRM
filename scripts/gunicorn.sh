@@ -15,7 +15,7 @@ env
 # preapre the Gunicorn command
 CMD="gunicorn crm.wsgi:application \
   --name django-app \
-  --workers $(expr 2 \* $(nproc) + 1) \
+  --workers 2 \
   --threads 4 \
   --worker-class gthread \
   --worker-tmp-dir /dev/shm \
