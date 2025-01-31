@@ -2,19 +2,33 @@
 
 set -euxo pipefail
 
-APP_NAME=bottlecrm-api
+# Navigate to the project directory inside the container
+cd /usr/src/app
 
-cd /home/ubuntu/$APP_NAME/$APP_NAME
-. ../venv/bin/activate
 
-# debug
-whoami; pwd; ls -al; env
+# Debugging information
+whoami
+pwd
+ls -al
+env
 
-exec gunicorn crm.wsgi:application \
-  --name $APP_NAME \
+# preapre the Gunicorn command
+CMD="gunicorn crm.wsgi:application \
+  --name django-app \
   --workers 2 \
   --threads 4 \
   --worker-class gthread \
   --worker-tmp-dir /dev/shm \
   --bind 0.0.0.0:8000 \
-  --log-level debug
+  --timeout 30 \
+  --max-requests 1000 --max-requests-jitter 50 \
+  --log-level info"
+
+# Enable reload in development mode
+ENV_TYPE=${ENV_TYPE:-prod} # default to prod
+if [ "$ENV_TYPE" == "dev" ]; then
+  CMD="$CMD --reload --log-level debug"
+fi
+
+# Run the command
+exec $CMD
