@@ -2,16 +2,19 @@
 
 set -euxo pipefail
 
-APP_NAME=bottlecrm-api
+# Navigate to the project directory inside the container
+cd /usr/src/app
 
-cd /home/ubuntu/$APP_NAME/$APP_NAME
-. ../venv/bin/activate
 
-# debug
-whoami; pwd; ls -al; env
+# Debugging information
+whoami
+pwd
+ls -al
+env
 
+# Start the Gunicorn server
 exec gunicorn crm.wsgi:application \
-  --name $APP_NAME \
+  --name django-app \
   --workers 2 \
   --threads 4 \
   --worker-class gthread \
