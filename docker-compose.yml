@@ -6,6 +6,8 @@ services:
     volumes:
       - /var/log/docker/django-app:/var/log/django-app
     working_dir: /usr/src/app
+    environment:
+      - RUNNING_IN_DOCKER=true
     ports:
       - "8000:8000"
     depends_on:

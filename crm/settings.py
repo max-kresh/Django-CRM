@@ -105,6 +105,7 @@ WSGI_APPLICATION = "crm.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
+RUNNING_IN_DOCKER = os.getenv("RUNNING_IN_DOCKER", "false").lower() == "true"
 
 DATABASES = {
     "default": {
@@ -112,7 +113,7 @@ DATABASES = {
         "NAME": os.environ["DBNAME"],
         "USER": os.environ["DBUSER"],
         "PASSWORD": os.environ["DBPASSWORD"],
-        "HOST": os.environ["DBHOST"],
+        "HOST": os.environ["DBHOST"] if RUNNING_IN_DOCKER else "localhost",
         "PORT": os.environ["DBPORT"],
     }
 }
