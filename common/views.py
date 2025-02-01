@@ -104,9 +104,9 @@ class UsersListView(APIView, LimitOffsetPagination):
             return [crm_permissions.CanListUsers()]
     
     @extend_schema(parameters=swagger_params1.organization_params,request=UserCreateSwaggerSerializer)
-    def post(self, request, format=None):
-        print(request.profile.role, request.user.is_superuser)
-        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
+    def post(self, request):
+        profile = request.user.profile.first()
+        if profile.role != Constants.ADMIN and not self.request.user.is_superuser:
             return Response(
                 {"error": True, "errors": "Permission Denied"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -114,7 +114,7 @@ class UsersListView(APIView, LimitOffsetPagination):
         else:
             params = request.data
             if params:
-                user_serializer = CreateUserSerializer(data=params, org=request.profile.org)
+                user_serializer = CreateUserSerializer(data=params, org=profile.org)
                 address_serializer = BillingAddressSerializer(data=params)
                 profile_serializer = CreateProfileSerializer(data=params)
                 data = {}
@@ -145,7 +145,7 @@ class UsersListView(APIView, LimitOffsetPagination):
                         date_of_joining=timezone.now(),
                         role=params.get("role"),
                         address=address_obj,
-                        org=request.profile.org,
+                        org=profile.org,
                     )
 
                     # send_email_to_new_user.delay(
