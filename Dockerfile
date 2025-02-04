@@ -1,50 +1,79 @@
-FROM ubuntu:20.04
+FROM python:3.9
 
-ARG APP_NAME
+# Arguments for environment variables
+ARG SECRET_KEY
+ARG ALLOWED_HOSTS
+ARG POSTGRES_DB
+ARG POSTGRES_USER
+ARG POSTGRES_PASSWORD
+ARG DEBUG
+ARG SENTRY_DSN
+ARG CELERY_BROKER_URL
+ARG CELERY_RESULT_BACKEND
+ARG SWAGGER_ROOT_URL
+ARG MEMCACHELOCATION
+ARG DEFAULT_FROM_EMAIL
+ARG ADMIN_EMAIL
+ARG EMAIL_BACKEND
+ARG EMAIL_HOST
+ARG EMAIL_PORT
+ARG EMAIL_USE_TLS
+ARG EMAIL_HOST_USER
+ARG EMAIL_HOST_PASSWORD
+ARG TIME_ZONE
+# Set environment variables for the app
+ENV SECRET_KEY=${SECRET_KEY}
+ENV ALLOWED_HOSTS=${ALLOWED_HOSTS}
+ENV DBNAME=${DBNAME}
+ENV DBUSER=${DBUSER}
+ENV DBPASSWORD=${DBPASSWORD}
+ENV DBHOST=${DBHOST}
+ENV DBPORT=${DBPORT}
+ENV DEBUG=${DEBUG}
+ENV SENTRY_DSN=${SENTRY_DSN}
+ENV CELERY_BROKER_URL=${CELERY_BROKER_URL}
+ENV CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+ENV SWAGGER_ROOT_URL=${SWAGGER_ROOT_URL}
+ENV MEMCACHELOCATION=${MEMCACHELOCATION}
+ENV DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
+ENV ADMIN_EMAIL=${ADMIN_EMAIL}
+ENV EMAIL_BACKEND=${EMAIL_BACKEND}
+ENV EMAIL_HOST=${EMAIL_HOST}
+ENV EMAIL_PORT=${EMAIL_PORT}
+ENV EMAIL_USE_TLS=${EMAIL_USE_TLS}
+ENV EMAIL_HOST_USER=${EMAIL_HOST_USER}
+ENV EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+ENV TIME_ZONE=${TIME_ZONE}
 
-# Test arg
-RUN test -n "$APP_NAME"
+# Prevent Python from writing .pyc files and enable unbuffered stdout
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-# Install system packages
-RUN apt-get update -y
-RUN apt-get install -y \
-  python3-pip \
-  python3-venv \
-  build-essential \
-  libpq-dev \
-  libmariadbclient-dev \
-  libjpeg62-dev \
-  zlib1g-dev \
-  libwebp-dev \
-  curl  \
-  vim \
-  net-tools \
-  dos2unix
+# Directory for static files
+ENV STATIC_ROOT=/usr/src/app/staticfiles
 
-# Setup user
-RUN useradd -ms /bin/bash ubuntu
-USER ubuntu
+# Set working directory
+WORKDIR /usr/src/app
 
-# Setup directories
-RUN mkdir -p /home/ubuntu/"$APP_NAME"/"$APP_NAME"
-WORKDIR /home/ubuntu/"$APP_NAME"/"$APP_NAME"
-# Create virtual environment and activate it
-RUN python3 -m venv ../venv
-RUN . ../venv/bin/activate
-# Install pip and gunicorn
-RUN /home/ubuntu/"$APP_NAME"/venv/bin/pip install -U pip
-RUN /home/ubuntu/"$APP_NAME"/venv/bin/pip install gunicorn
-# Copy files and ensure correct ownership to ubuntu user
-COPY --chown=ubuntu:ubuntu . .
-# Ensure scripts end of line characters are unix formatted
+# Install dependencies
+COPY ./requirements.txt /usr/src/app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install psql client
+RUN apt-get update && apt-get install -y libpq-dev
+RUN apt-get update && apt-get install -y dos2unix
+
+# Copy project files
+COPY ./ /usr/src/app/
+
+# Format the script(s) to Unix format
 RUN dos2unix scripts/*.sh
-# Make scripts executable
+
+# Make the script(s) executable
 RUN chmod +x scripts/*.sh
-# Install pip requirements
-RUN /home/ubuntu/"$APP_NAME"/venv/bin/pip install -r requirements.txt
 
-# Setup PATH to include scripts
-ENV PATH="${PATH}:/home/ubuntu/$APP_NAME/$APP_NAME/scripts"
+# Expose port for Gunicorn
+EXPOSE 8000
 
-# Default command to run the app when the container starts
-CMD [ "gunicorn.sh" ]
+# Command to run the app with Gunicorn
+CMD ["/bin/sh", "-c", "./scripts/start.sh"]

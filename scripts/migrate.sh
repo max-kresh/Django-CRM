@@ -2,12 +2,14 @@
 
 set -euxo pipefail
 
-APP_NAME=bottlecrm-api
+# Navigate to the project directory inside the container
+cd /usr/src/app
 
-cd /home/ubuntu/$APP_NAME/$APP_NAME
-. ../venv/bin/activate
+# Debugging information
+whoami
+pwd
+ls -al
+env
 
-# debug
-whoami; pwd; ls -al; env
-
+# Run database migrations
 exec python manage.py migrate

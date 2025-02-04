@@ -14,9 +14,6 @@ from drf_spectacular.views import (
 # from drf_yasg import openapi
 # from drf_yasg.views import get_schema_view
 from rest_framework import permissions
-from wagtail import urls as wagtail_urls
-from wagtail.admin import urls as wagtailadmin_urls
-from wagtail.documents import urls as wagtaildocs_urls
 
 app_name = "crm"
 
@@ -30,10 +27,8 @@ urlpatterns = [
     path(
         "logout/", views.LogoutView.as_view(), {"next_page": "/login/"}, name="logout"
     ),
-    path("admin/", include(wagtailadmin_urls)),
     
-    path("django/admin/", admin.site.urls),
-    path("documents/", include(wagtaildocs_urls)),
+    path("admin/", admin.site.urls),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     # Optional UI:
     path(
@@ -45,8 +40,7 @@ urlpatterns = [
         "api/schema/redoc/",
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
-    ),
-    path("", include(wagtail_urls)),
+    )
 ]
 
 
