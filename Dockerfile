@@ -66,6 +66,7 @@ RUN apt-get update && apt-get install -y dos2unix
 # Copy project files
 COPY ./ /usr/src/app/
 
+# Format the script(s) to Unix format
 RUN dos2unix scripts/*.sh
 
 # Make the script(s) executable
@@ -75,4 +76,4 @@ RUN chmod +x scripts/*.sh
 EXPOSE 8000
 
 # Command to run the app with Gunicorn
-CMD ["./scripts/start.sh"]
+CMD ["/bin/sh", "-c", "./scripts/start.sh"]
