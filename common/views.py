@@ -105,7 +105,7 @@ class UsersListView(APIView, LimitOffsetPagination):
     
     @extend_schema(parameters=swagger_params1.organization_params,request=UserCreateSwaggerSerializer)
     def post(self, request):
-        profile = request.user.profile.first()
+        profile = request.profile
         if profile.role != Constants.ADMIN and not self.request.user.is_superuser:
             return Response(
                 {"error": True, "errors": "Permission Denied"},
@@ -913,8 +913,6 @@ class UserLoginView(APIView):
         response['access_token'] = str(token.access_token)
         response['refresh_token'] = str(token)
         response['user_id'] = user.id    
-        if user.profile.exists():
-            response['role'] = user.profile.first().role
         return Response(response)
 
 class CreatePasswordView(APIView):
@@ -997,8 +995,6 @@ class GoogleLoginView(APIView):
         response['access_token'] = str(token.access_token)
         response['refresh_token'] = str(token)
         response['user_id'] = user.id
-        if user.profile.exists():
-            response['role'] = user.profile.first().role
         return Response(response)
     
 

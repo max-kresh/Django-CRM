@@ -1,5 +1,6 @@
 import pytz
 from django.utils.translation import gettext_lazy as _
+from random import randint
 
 class Constants:
     ADMIN = "ADMIN"
@@ -642,3 +643,9 @@ def append_str_to(append_to: str, *args, sep=", ", **kwargs):
             data = True
             break
     return f"{sep}".join(filter(len, result_list)) if data else ""
+
+
+def get_random_digits(n_of_digits):
+    """Returns a string of length n_of_digits composed of random numbers
+    between 0 and 9 (both are inclusive)"""
+    return ("".join([str(randint(0, 9)) for i in range(0, n_of_digits)]))

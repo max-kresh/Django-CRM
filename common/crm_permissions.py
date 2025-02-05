@@ -11,10 +11,10 @@ from rest_framework.permissions import BasePermission
 from common.utils import Constants
 
 
-def get_user_role(user):
+def get_user_role(request):
     """Returns the role of the user if exists, otherwise returns "NO_ROLE_FOR_USER"."""
     try:
-        role = user.profile.first().role
+        role = request.profile.role
     except AttributeError:
         role = "NO_ROLE_FOR_USER"
     finally:
@@ -24,25 +24,25 @@ def get_user_role(user):
 class IsAdmin(BasePermission):
     """Checks if user is ADMIN"""    
     def has_permission(self, request, view):
-        role = get_user_role(request.user) 
+        role = get_user_role(request) 
         return role == (Constants.ADMIN or request.user.is_superuser)
 
 class IsSalesManager(BasePermission):
     """Checks if user is SALES_MANAGER"""
     def has_permission(self, request, view):
-        role = get_user_role(request.user)
+        role = get_user_role(request)
         return role == Constants.SALES_MANAGER
 
 class IsSalesRep(BasePermission):
     """Checks if user is SALES_REPRESENTATIVE"""
     def has_permission(self, request, view):
-        role = get_user_role(request.user)
+        role = get_user_role(request)
         return role == Constants.SALES_REPRESENTATIVE
 
 class IsUser(BasePermission):
     """Checks if user is USER"""
     def has_permission(self, request, view):
-        role = get_user_role(request.user)
+        role = get_user_role(request)
         return role == Constants.USER
 
 
