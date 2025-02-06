@@ -16,52 +16,52 @@ from common.tests.factories import (
     AddressFactory,
 )
 from rest_framework_simplejwt.tokens import RefreshToken
-# class UserLoginViewTests(APITestCase):
-#     def setUp(self):
-#         # Create Organization
-#         self.org1 = OrgFactory()
-#         # Create an user
-#         self.regular_user_data={"email": "regular@example.com", "password": "regularpass"}
-#         self.regular_user = UserFactory(email=self.regular_user_data["email"])
-#         self.regular_user.set_password(self.regular_user_data["password"])
-#         self.regular_user.save()
+class UserLoginViewTests(APITestCase):
+    def setUp(self):
+        # Create Organization
+        self.org1 = OrgFactory()
+        # Create an user
+        self.regular_user_data={"email": "regular@example.com", "password": "regularpass"}
+        self.regular_user = UserFactory(email=self.regular_user_data["email"])
+        self.regular_user.set_password(self.regular_user_data["password"])
+        self.regular_user.save()
         
-#         refresh = RefreshToken.for_user(self.regular_user)
-#         self.regular_access_token = str(refresh.access_token)
+        refresh = RefreshToken.for_user(self.regular_user)
+        self.regular_access_token = str(refresh.access_token)
 
     
     
-#         self.url = reverse("common_urls:api_common:user-login")
+        self.url = reverse("common_urls:api_common:user-login")
     
-#     def test_user_login(self):
-#         """
-#         Ensure we can login with valid credentials.
-#         """
+    def test_user_login(self):
+        """
+        Ensure we can login with valid credentials.
+        """
        
-#         response = self.client.post(self.url, data=self.regular_user_data, format="json")
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertEqual(response.data["username"], "regular@example.com")
-#         self.assertTrue("access_token" in response.data)
+        response = self.client.post(self.url, data=self.regular_user_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["username"], "regular@example.com")
+        self.assertTrue("access_token" in response.data)
     
-#     def test_user_login_with_invalid_pass(self):
-#         """
-#         Ensure we can't login with invalid credentials.
-#         """
-#         # wrong pass
-#         invalid_data={"email": "regular@example.com", "password": "regularwrongpass"}
-#         response = self.client.post(self.url, data=invalid_data, format="json")
-#         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    def test_user_login_with_invalid_pass(self):
+        """
+        Ensure we can't login with invalid credentials.
+        """
+        # wrong pass
+        invalid_data={"email": "regular@example.com", "password": "regularwrongpass"}
+        response = self.client.post(self.url, data=invalid_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         
     
-#     def test_user_login_with_invalid_email(self):
-#         """
-#         Ensure we can't login with invalid email.
-#         """
-#         # wrong email
-#         invalid_data={"email": "wrongregular@example.com,", "password": "regularpass"}
-#         response = self.client.post(self.url, data=invalid_data, format="json")
-#         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    def test_user_login_with_invalid_email(self):
+        """
+        Ensure we can't login with invalid email.
+        """
+        # wrong email
+        invalid_data={"email": "wrongregular@example.com,", "password": "regularpass"}
+        response = self.client.post(self.url, data=invalid_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 class CreatePasswordViewTests(APITestCase):
     def setUp(self):
         self.regular_user=UserFactory(email="regular@email.com")

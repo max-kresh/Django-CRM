@@ -100,88 +100,88 @@ class UserListViewTests(APITestCase):
         response = self.client.post(self.url, data=self.example_user_data, format="json", headers={'org': self.org1.name})
         print(response)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-    # # Get users list tests
-        # def test_get_users_list_as_admin(self):
-        #     """
-        #     Admin can get the list of users in the organization.
-        #     """
-        #     self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.admin_access_token)
-        #     response = self.client.get(self.url, headers={'org': self.org1.name})
-        #     print(response.data)
-        #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-        #     self.assertEqual(response.data["active_users"]["active_users_count"], 2)
-        
-        # def test_get_users_list_as_user_results_in_403(self):
-        #     """
-        #     Regular organization user (non-admin) cannot get the list of users in the organization.
-        #     """
-        #     self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.example_user_access_token)
-        #     response = self.client.get(self.url, headers={'org': self.org1.name})
-        #     print(response.data)
-        #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        #     # self.assertEqual(response.data["active_users"]["active_users_count"], 3)
-        
-        # def test_get_user_as_sales_manager(self):
-        #     """
-        #     Sales Manager can get the list of users in the organization.
-        #     """
-        #     self.example_profile.role = "SALES_MANAGER"
-        #     self.example_profile.save()
-        #     self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.example_user_access_token)
-        #     response = self.client.get(self.url, headers={'org': self.org1.name})
-        #     print(response.data)
-        #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-        #     self.assertEqual(response.data["active_users"]["active_users_count"], 2)
-        
-        # def test_get_users_list_as_unauthenticated_user_results_in_401(self):
-        #     """
-        #     Unauthenticated user cannot get the list of users in the organization.
-        #     """
-        #     response = self.client.get(self.url, headers={'org': self.org1.name})
-        #     print(response)
-        #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        
-        # def test_get_users_list_as_non_orgazinational_admin_results_in_403(self):
-        #     """
-        #     User who is not an admin of the organization cannot get the list of users in the organization.
-        #     """
-        #     org2 = OrgFactory()
-        #     self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.example_user_access_token)
-        #     response = self.client.get(self.url, headers={'org': org2.name})
-        #     print(response)
-        #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        
-        # # Get users by filter tests
-        # def test_get_users_as_admin_by_filtering_role(self):
-        #     """
-        #     Admin can get the list of users in the organization by filtering role.
-        #     """
-        #     self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.admin_access_token)
-        #     response = self.client.get(self.url + "?role=USER", headers={'org': self.org1.name})
-        #     print(response.data)
-        #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-        #     self.assertEqual(response.data["active_users"]["active_users_count"], 1)
-        #     self.assertEqual(response.data["active_users"]["active_users"][0]["id"], str(self.example_profile.id))
-        
-        # def test_get_users_as_admin_by_filtering_status(self):
-        #     """
-        #     Admin can get the list of users in the organization by filtering status.
-        #     """
-        #     self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.admin_access_token)
-        #     response = self.client.get(self.url + "?is_active=True", headers={'org': self.org1.name})
-        #     print(response.data)
-        #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-        #     self.assertEqual(response.data["active_users"]["active_users_count"], 2)
-        
-        # def test_get_users_as_admin_by_filtering_email(self):
-        #     """
-        #     Admin can get the list of users in the organization by filtering email.
-        #     """
-        #     self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.admin_access_token)
-        #     response = self.client.get(self.url + f"?email={self.example_user.email}", headers={'org': self.org1.name})
-        #     print(response.data)
-        #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-        #     self.assertEqual(response.data["active_users"]["active_users"][0]["user_details"]["email"], self.example_user.email)
+    # Get users list tests
+    def test_get_users_list_as_admin(self):
+        """
+        Admin can get the list of users in the organization.
+        """
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.admin_access_token)
+        response = self.client.get(self.url, headers={'org': self.org1.name})
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["active_users"]["active_users_count"], 2)
+    
+    def test_get_users_list_as_user_results_in_403(self):
+        """
+        Regular organization user (non-admin) cannot get the list of users in the organization.
+        """
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.example_user_access_token)
+        response = self.client.get(self.url, headers={'org': self.org1.name})
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # self.assertEqual(response.data["active_users"]["active_users_count"], 3)
+    
+    def test_get_user_as_sales_manager(self):
+        """
+        Sales Manager can get the list of users in the organization.
+        """
+        self.example_profile.role = "SALES_MANAGER"
+        self.example_profile.save()
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.example_user_access_token)
+        response = self.client.get(self.url, headers={'org': self.org1.name})
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["active_users"]["active_users_count"], 2)
+    
+    def test_get_users_list_as_unauthenticated_user_results_in_401(self):
+        """
+        Unauthenticated user cannot get the list of users in the organization.
+        """
+        response = self.client.get(self.url, headers={'org': self.org1.name})
+        print(response)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    def test_get_users_list_as_non_orgazinational_admin_results_in_403(self):
+        """
+        User who is not an admin of the organization cannot get the list of users in the organization.
+        """
+        org2 = OrgFactory()
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.example_user_access_token)
+        response = self.client.get(self.url, headers={'org': org2.name})
+        print(response)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    # Get users by filter tests
+    def test_get_users_as_admin_by_filtering_role(self):
+        """
+        Admin can get the list of users in the organization by filtering role.
+        """
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.admin_access_token)
+        response = self.client.get(self.url + "?role=USER", headers={'org': self.org1.name})
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["active_users"]["active_users_count"], 1)
+        self.assertEqual(response.data["active_users"]["active_users"][0]["id"], str(self.example_profile.id))
+    
+    def test_get_users_as_admin_by_filtering_status(self):
+        """
+        Admin can get the list of users in the organization by filtering status.
+        """
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.admin_access_token)
+        response = self.client.get(self.url + "?is_active=True", headers={'org': self.org1.name})
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["active_users"]["active_users_count"], 2)
+    
+    def test_get_users_as_admin_by_filtering_email(self):
+        """
+        Admin can get the list of users in the organization by filtering email.
+        """
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.admin_access_token)
+        response = self.client.get(self.url + f"?email={self.example_user.email}", headers={'org': self.org1.name})
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["active_users"]["active_users"][0]["user_details"]["email"], self.example_user.email)
         
 class UserDetailViewTests(APITestCase):
     def setUp(self):
