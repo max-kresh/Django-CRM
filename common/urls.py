@@ -17,7 +17,7 @@ urlpatterns = [
     path("auth/google/", views.GoogleLoginView.as_view()),
     path("auth/email/", views.UserLoginView.as_view()),
     path("auth/activate-user/", views.CreatePasswordView.as_view()),
-    path("org/", views.OrgProfileCreateView.as_view()),
+    path("org/", views.OrgProfileCreateView.as_view(), name="org-profile"),
     path("profile/", views.ProfileView.as_view()),
     path("users/get-teams-and-users/", views.GetTeamsAndUsersView.as_view()),
     path("users/", views.UsersListView.as_view(), name="users-list"),
