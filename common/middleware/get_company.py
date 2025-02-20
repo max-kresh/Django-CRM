@@ -28,7 +28,7 @@ class GetProfileAndOrg(object):
             self.process_request(request)
             return self.get_response(request)
         except AuthenticationFailed as e:
-            return JsonResponse({"error": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+            return JsonResponse({"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED)
         except PermissionDenied:
             return JsonResponse({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
         except:
