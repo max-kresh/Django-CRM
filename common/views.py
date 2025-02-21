@@ -260,7 +260,6 @@ class UserDetailView(APIView):
         context["assigned_data"] = assigned_data
         comments = profile_obj.user_comments.all()
         context["comments"] = CommentSerializer(comments, many=True).data
-        context["countries"] = COUNTRIES
         return Response(
             {"error": False, "data": context},
             status=status.HTTP_200_OK,

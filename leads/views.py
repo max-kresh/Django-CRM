@@ -143,7 +143,6 @@ class LeadListView(APIView, LimitOffsetPagination):
             "id", "user__email"
         )
         context["users"] = users
-        context["countries"] = COUNTRIES
         context["industries"] = INDCHOICES
         return context
 
@@ -349,7 +348,6 @@ class LeadDetailView(APIView):
         context["teams"] = TeamsSerializer(
             Teams.objects.filter(org=self.request.profile.org), many=True
         ).data
-        context["countries"] = COUNTRIES
 
         return context
 

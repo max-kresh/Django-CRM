@@ -128,7 +128,6 @@ class InvoiceListView(APIView, LimitOffsetPagination):
             ).data
         context["status"] = INVOICE_STATUS
         context["currency"] = CURRENCY_CODES
-        context["countries"] = COUNTRIES
 
         return context
 

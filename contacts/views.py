@@ -77,7 +77,6 @@ class ContactsListView(APIView, LimitOffsetPagination):
         context["page_number"] = page_number
         context.update({"contacts_count": self.count, "offset": offset})
         context["contact_obj_list"] = contacts
-        context["countries"] = COUNTRIES
         users = Profile.objects.filter(is_active=True, org=self.request.profile.org).values(
             "id", "user__email"
         )
@@ -297,7 +296,6 @@ class ContactDetailView(APIView):
             user_assgn_list.append(self.request.profile.id)
 
         context["address_obj"] = BillingAddressSerializer(contact_obj.address).data
-        context["countries"] = COUNTRIES
         context.update(
             {
                 "comments": CommentSerializer(
