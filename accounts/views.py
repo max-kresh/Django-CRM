@@ -129,7 +129,6 @@ class AccountsListView(APIView, LimitOffsetPagination):
         context["teams"] = TeamsSerializer(
             Teams.objects.filter(org=self.request.profile.org), many=True
         ).data
-        context["countries"] = COUNTRIES
         context["industries"] = INDCHOICES
 
         tags = Tags.objects.all()

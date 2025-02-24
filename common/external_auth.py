@@ -47,7 +47,7 @@ class CustomDualAuthentication(BaseAuthentication):
                 request.profile = profile
                 profile = (profile.user, True)
             except Org.DoesNotExist:
-                raise AuthenticationFailed('Invalid API Key')
+                raise AuthenticationFailed('Invalid API Key', code=status.HTTP_401_UNAUTHORIZED)
 
         # Select the appropriate user based on authentication method
         # Return the user if any authentication method succeeded

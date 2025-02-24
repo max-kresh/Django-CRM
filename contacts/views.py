@@ -77,7 +77,6 @@ class ContactsListView(APIView, LimitOffsetPagination):
         context["page_number"] = page_number
         context.update({"contacts_count": self.count, "offset": offset})
         context["contact_obj_list"] = contacts
-        context["countries"] = COUNTRIES
         users = Profile.objects.filter(is_active=True, org=self.request.profile.org).values(
             "id", "user__email"
         )
@@ -116,7 +115,7 @@ class ContactsListView(APIView, LimitOffsetPagination):
         contact_obj = contact_serializer.save(date_of_birth=params.get("date_of_birth"))
         contact_obj.category = None
         # contact_obj.address = address_obj
-        contact_obj.org = request.user.profile.first().org
+        contact_obj.org = request.profile.org
         contact_obj.save()
 
         if params.get("teams"):
@@ -299,7 +298,6 @@ class ContactDetailView(APIView):
             user_assgn_list.append(self.request.profile.id)
 
         context["address_obj"] = BillingAddressSerializer(contact_obj.address).data
-        context["countries"] = COUNTRIES
         context.update(
             {
                 "comments": CommentSerializer(

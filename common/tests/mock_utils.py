@@ -6,67 +6,50 @@ Author: Mithat Daglar
 Date: 31.01.2025
 Team: IT-22 Pydozen
 """
-
-from unittest.mock import patch
-from functools import wraps
 from django.contrib.auth import get_user_model
-from random import randint
+from django.db.models import Q
 
-from common.models import Profile, Org
+from common.models import Org, Profile, User
+from common.utils import Constants, get_random_digits
 
-from common.utils import Constants
+def middleware_mocker(request, user, org):
+        request.profile = user.profile.filter(
+            Q(user=user), Q(org__name=org)).first()
+        return None
 
 
-def mock_crm_middleware(user_field_name):
-    """Decorator to mock GetProfileAndOrg middleware in test cases with a given user.
-       user_field_name: field name on the user making the http request exp: if you have 
-       a field in your test class with an name admin_user pass this name as a string. 
+def create_test_user(email = "", org_name = "Test_Org", role = Constants.USER):
+    """Creates and returns a test user with a profile by using given parameters.
+        email: email of the user. If there already exists a user in db with the same
+                email address this function raises a ValueError. 
+                If email is not provided function creates a dummy email with the format:
+                <role>_<4 digit random number>@example.com
+        org_name: name of the organization. If not provided "Test_Org" is used. If there
+                exists an organization with the same name this function uses it. If it does 
+                not exist it is created.
+        role: Role of the created user. Default is USER. Uses constant valuse from Constans. 
     """
-
-    def mock_middleware_call(request, user):
-        """Adds user profile into request. This function is called when a http
-        request is sent by a mocking test function before the request reaches to 
-        the endpoint."""
-        
-        request.profile = user.profile.first() 
-        return request
-
-    def decorator(test_func):
-        @patch("common.middleware.get_company.GetProfileAndOrg")
-        @wraps(test_func)
-        def wrapper(self, mock_middleware, *args, **kwargs):
-            current_user = getattr(self, user_field_name)
-            if not current_user:
-                raise ValueError(f"A field with name {user_field_name} could not be found. 
-                                 Crm middleware can not be mocked with this value.")
-            self.client.force_authenticate(current_user)
-            mock_middleware.side_effect = lambda request: mock_middleware_call(request, current_user)
-            
-            return test_func(self, *args, **kwargs)  
-        
-        return wrapper
-
-    return decorator
-
-
-def get_random_digits(n_of_digits):
-    """Returns a string of length n_of_digits composed of random numbers
-    between 0 and 9 (both are inclusive)"""
-    return ("".join([str(randint(0, 9)) for i in range(0, n_of_digits)]))
-
-def create_test_user(org_name = "Test_Org", role = Constants.USER):
-    """Creates and returns a test user with a profile by using given parameters."""
+    email = email.strip()
+    password = "123"
+    if email:
+        if User.objects.filter(email=email).exists():
+            raise ValueError(f"A user with {email} already exists. "
+                             f"Please provide another email or let me handle it "
+                             f"by NOT specifying an email.")
+    else:
+        email = f"{role.lower()}_{get_random_digits(4)}@example.com"
     if role == Constants.ADMIN:
         user = get_user_model().objects.create_superuser(
-            **{"email":f"admin_{get_random_digits(4)}@example.com", "password":"password123"}
+            **{"email": email, "password":password}
         )
     else:
         user = get_user_model().objects.create_user(
-            **{"email":f"{role.lower()}_{get_random_digits(4)}@example.com", "password":"password123"}
+            **{"email": email, "password": password}
         )
     user.save()
     org, _ = Org.objects.get_or_create(name=org_name)
 
     profile = Profile.objects.create(org=org, user=user, role=role)
     profile.save()
+    print(f"{user} is created with password {password}")
     return user

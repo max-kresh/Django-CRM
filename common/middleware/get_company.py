@@ -6,29 +6,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from crum import get_current_user
 from django.utils.functional import SimpleLazyObject
+from rest_framework.exceptions import AuthenticationFailed
+from django.http import JsonResponse
 
 from common.models import Org, Profile, User
 from common.utils import Constants
 
-
-# def set_profile_request(request, org, token):
-#     # we are decoding the token
-#     decoded = jwt.decode(token, (settings.SECRET_KEY), algorithms=[settings.JWT_ALGO])
-
-#     request.user = User.objects.get(id=decoded["user_id"])
-
-#     if request.user:
-#         request.profile = Profile.objects.get(
-#             user=request.user, org=org, is_active=True
-#         )
-#         request.profile.role = Constants.ADMIN
-#         request.profile.save()
-#         if request.profile is None:
-#             logout(request)
-#             return Response(
-#                 {"error": False},
-#                 status=status.HTTP_200_OK,
-            # )
 
 def get_actual_value(request):
     if request.user is None:
@@ -41,9 +24,15 @@ class GetProfileAndOrg(object):
         self.get_response = get_response
 
     def __call__(self, request):
-        self.process_request(request)
-        return self.get_response(request)
-
+        try: 
+            self.process_request(request)
+            return self.get_response(request)
+        except AuthenticationFailed as e:
+            return JsonResponse({"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED)
+        except PermissionDenied:
+            return JsonResponse({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+        except:
+            return JsonResponse({"error": "Internal Server Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     def process_request(self, request):
         try :
             request.profile = None
@@ -52,7 +41,10 @@ class GetProfileAndOrg(object):
             if request.headers.get("Authorization"):
                 token1 = request.headers.get("Authorization")
                 token = token1.split(" ")[1]  # getting the token value
-                decoded = jwt.decode(token, (settings.SECRET_KEY), algorithms=[settings.JWT_ALGO])
+                try:
+                    decoded = jwt.decode(token, (settings.SECRET_KEY), algorithms=[settings.JWT_ALGO])
+                except:
+                    raise AuthenticationFailed('Invalid API Key', code=status.HTTP_401_UNAUTHORIZED)
                 user_id = decoded['user_id']
             api_key = request.headers.get('Token')  # Get API key from request query params
             if api_key:
@@ -63,7 +55,7 @@ class GetProfileAndOrg(object):
                     profile = Profile.objects.filter(org=api_key_user, role=Constants.ADMIN).first()
                     user_id = profile.user.id
                 except Org.DoesNotExist:
-                    raise AuthenticationFailed('Invalid API Key')
+                    raise AuthenticationFailed('Invalid API Key', code=status.HTTP_401_UNAUTHORIZED)
             if user_id is not None:
                 # Frontend app sends id of the org and Swagger UI sends name 
                 # of the org. This blog is changed to meet both sides.
@@ -81,6 +73,8 @@ class GetProfileAndOrg(object):
                         )
                     if profile:
                         request.profile = profile
-        except :
-             print('test1')
-             raise PermissionDenied()
+        except AuthenticationFailed as e:
+            raise AuthenticationFailed(e)
+        except:
+            raise PermissionDenied()
+            
