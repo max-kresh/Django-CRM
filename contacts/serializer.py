@@ -124,7 +124,7 @@ class CreateContactSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         address_data = validated_data.pop("address", None)
         if address_data:
-            address_instance = Address.objects.get_or_create(**address_data)
+            address_instance, created = Address.objects.get_or_create(**address_data)
             validated_data["address"] = address_instance
         contact_instance = Contact.objects.create(**validated_data)
         
