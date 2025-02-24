@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from common.models import Address
 from common.serializer import (
     AttachmentsSerializer,
     BillingAddressSerializer,
@@ -64,6 +65,7 @@ class ContactSerializer(serializers.ModelSerializer):
 
 
 class CreateContactSerializer(serializers.ModelSerializer):
+    address = BillingAddressSerializer(required=False)
     def __init__(self, *args, **kwargs):
         request_obj = kwargs.pop("request_obj", None)
         super().__init__(*args, **kwargs)
@@ -96,7 +98,6 @@ class CreateContactSerializer(serializers.ModelSerializer):
     #                 "Contact already exists with this name"
     #             )
     #     return first_name
-
     class Meta:
         model = Contact
         fields = (
@@ -120,6 +121,25 @@ class CreateContactSerializer(serializers.ModelSerializer):
             "twitter_username",
         )
 
+    def create(self, validated_data):
+        address_data = validated_data.pop("address", None)
+        if address_data:
+            address_instance = Address.objects.get_or_create(**address_data)
+            validated_data["address"] = address_instance
+        contact_instance = Contact.objects.create(**validated_data)
+        
+        return contact_instance
+
+    def update(self, instance, validated_data):
+        address_data = validated_data.pop("address", None)
+        if address_data:
+            address_instance, created = Address.objects.get_or_create(**address_data)
+            instance.address = address_instance
+            instance.save()
+
+        return super().update(instance, validated_data)
+
+    
 
 class ContactDetailEditSwaggerSerializer(serializers.Serializer):
     comment = serializers.CharField()

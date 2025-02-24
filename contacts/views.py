@@ -98,23 +98,24 @@ class ContactsListView(APIView, LimitOffsetPagination):
     def post(self, request, *args, **kwargs):
         params = request.data
         contact_serializer = CreateContactSerializer(data=params, request_obj=request)
-        address_serializer = BillingAddressSerializer(data=params)
+        # We handle address serializer in CreateContactSerializer
+        # address_serializer = BillingAddressSerializer(data=params["address"])
 
         data = {}
         if not contact_serializer.is_valid():
             data["contact_errors"] = contact_serializer.errors
-        if not address_serializer.is_valid():
-            data["address_errors"] = (address_serializer.errors,)
+        # if not address_serializer.is_valid():
+        #     data["address_errors"] = (address_serializer.errors,)
         if data:
             return Response(
                 {"error": True, "errors": data},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         # if contact_serializer.is_valid() and address_serializer.is_valid():
-        address_obj = address_serializer.save()
+        # address_obj = address_serializer.save()
         contact_obj = contact_serializer.save(date_of_birth=params.get("date_of_birth"))
         contact_obj.category = None
-        contact_obj.address = address_obj
+        # contact_obj.address = address_obj
         contact_obj.org = request.user.profile.first().org
         contact_obj.save()
 
@@ -162,7 +163,7 @@ class ContactDetailView(APIView):
     def put(self, request, pk, format=None):
         data = request.data
         contact_obj = self.get_object(pk=pk)
-        address_obj = contact_obj.address
+        # address_obj = contact_obj.address
         if contact_obj.org != request.profile.org:
             return Response(
                 {"error": True, "errors": "User company doesnot match with header...."},
@@ -171,12 +172,13 @@ class ContactDetailView(APIView):
         contact_serializer = CreateContactSerializer(
             data=data, instance=contact_obj, request_obj=request
         )
-        address_serializer = BillingAddressSerializer(data=data, instance=address_obj)
+        # We handle address serializer in CreateContactSerializer
+        # address_serializer = BillingAddressSerializer(data=data, instance=address_obj)
         data = {}
         if not contact_serializer.is_valid():
             data["contact_errors"] = contact_serializer.errors
-        if not address_serializer.is_valid():
-            data["address_errors"] = (address_serializer.errors,)
+        # if not address_serializer.is_valid():
+        #     data["address_errors"] = (address_serializer.errors,)
         if data:
             data["error"] = True
             return Response(
@@ -201,11 +203,11 @@ class ContactDetailView(APIView):
                         status=status.HTTP_403_FORBIDDEN,
                     )
 
-            address_obj = address_serializer.save()
+            # address_obj = address_serializer.save()
             contact_obj = contact_serializer.save(
                 date_of_birth=data.get("date_of_birth")
             )
-            contact_obj.address = address_obj
+            # contact_obj.address = address_obj
             contact_obj.save()
             contact_obj = contact_serializer.save()
             contact_obj.teams.clear()
