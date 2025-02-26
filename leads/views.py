@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.models import Account, Tags
+from common import crm_permissions
 from common.models import APISettings, Attachments, Comment, Profile
 
 #from common.external_auth import CustomDualAuthentication
@@ -50,6 +51,12 @@ class LeadListView(APIView, LimitOffsetPagination):
     model = Lead
     permission_classes = (IsAuthenticated,)
 
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [crm_permissions.CanModifyLeads()] 
+        else:
+            return [crm_permissions.CanListLeads()]
+
     def get_context_data(self, **kwargs):
         params = self.request.query_params
         queryset = (
@@ -61,7 +68,7 @@ class LeadListView(APIView, LimitOffsetPagination):
                 "assigned_to",
             )
         ).order_by("-id")
-        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
+        if self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] and not self.request.user.is_superuser:
             queryset = queryset.filter(
                 Q(assigned_to__in=[self.request.profile])
                 | Q(created_by=self.request.profile.user)
@@ -139,9 +146,27 @@ class LeadListView(APIView, LimitOffsetPagination):
         ).data
         context["tags"] = TagsSerializer(Tags.objects.all(), many=True).data
 
-        users = Profile.objects.filter(is_active=True, org=self.request.profile.org).values(
-            "id", "user__email"
+        # values in "users" list is used to assign leads to users. Following code ensures that
+        # admin can assign a lead to every roles except "USER",
+        # sales manager can assign a lead to sales managers and sales representatives
+        # sales representative can assign a lead only to himself/herself 
+        users = []
+        role_in = (
+            [Constants.ADMIN, Constants.SALES_MANAGER, Constants.SALES_REPRESENTATIVE] 
+            if self.request.profile.role == Constants.ADMIN 
+            else [Constants.SALES_MANAGER, Constants.SALES_REPRESENTATIVE]
         )
+        if self.request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]:
+            users = Profile.objects.filter(
+                is_active=True, 
+                org=self.request.profile.org,
+                role__in=role_in
+            ).values(
+                "id", "user__email"
+            )
+        elif self.request.profile.role == Constants.SALES_REPRESENTATIVE:
+            users = [{"id": self.request.user.id, "user__email": self.request.user.email}]
+
         context["users"] = users
         context["industries"] = INDCHOICES
         return context
