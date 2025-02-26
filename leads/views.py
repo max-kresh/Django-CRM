@@ -285,6 +285,12 @@ class LeadDetailView(APIView):
     #authentication_classes = (CustomDualAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [crm_permissions.CanModifyLeads()] 
+        else:
+            return [crm_permissions.CanListLeads()]
+
     def get_object(self, pk):
         return get_object_or_404(Lead, id=pk)
 
@@ -296,7 +302,8 @@ class LeadDetailView(APIView):
         ]
         if self.request.profile.user == self.lead_obj.created_by:
             user_assgn_list.append(self.request.profile.user)
-        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
+        if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] and 
+            not self.request.user.is_superuser):
             if self.request.profile.id not in user_assgn_list:
                 return Response(
                     {
