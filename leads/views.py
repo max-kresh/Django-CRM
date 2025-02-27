@@ -188,11 +188,7 @@ class LeadListView(APIView, LimitOffsetPagination):
             if data.get("tags",None):
                 tags = data.get("tags")
                 for t in tags:
-                    tag = Tags.objects.filter(slug=t.lower())
-                    if tag.exists():
-                        tag = tag[0]
-                    else:
-                        tag = Tags.objects.create(name=t)
+                    tag, is_new = Tags.objects.get_or_create(name=t)
                     lead_obj.tags.add(tag)
 
             if data.get("contacts",None):
