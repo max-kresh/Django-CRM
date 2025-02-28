@@ -136,7 +136,10 @@ class LeadListView(APIView, LimitOffsetPagination):
             "offset": offset,
         }
         contacts = Contact.objects.filter(org=self.request.profile.org).values(
-            "id", "first_name"
+            "id", "first_name", "last_name", "organization","title", 
+            "primary_email", "mobile_number", 
+            "address__address_line", "address__city", "address__street", "address__state",
+            "address__postcode", "address__country"
         )
 
         context["contacts"] = contacts
