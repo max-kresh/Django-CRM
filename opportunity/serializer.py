@@ -102,28 +102,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "lead"
         )
 
-class OpportunityCreateSwaggerSerializer(serializers.ModelSerializer):
-    due_date = serializers.DateField()
-    opportunity_attachment = serializers.FileField()
-    class Meta:
-        model = Opportunity
-        fields = (
-            "name",
-            "account",
-            "amount",
-            "currency",
-            "stage",
-            "teams",
-            "lead_source",
-            "probability",
-            "description",
-            "assigned_to",
-            "contacts",
-            "due_date",
-            "tags",
-            "opportunity_attachment"
-        )
-
 class OpportunityDetailEditSwaggerSerializer(serializers.Serializer):
     comment = serializers.CharField()
     opportunity_attachment = serializers.FileField()
