@@ -9,6 +9,7 @@ from common.base import BaseModel
 from common.utils import CURRENCY_CODES, SOURCES, STAGES
 from contacts.models import Contact
 from teams.models import Teams
+from leads.models import Lead
 
 
 class Opportunity(BaseModel):
@@ -57,6 +58,11 @@ class Opportunity(BaseModel):
         blank=True,
         related_name="oppurtunity_org",
     )
+    lead = models.ForeignKey(
+        Lead,
+        on_delete=models.RESTRICT,
+        blank=True,
+        null=True)
 
     class Meta:
         verbose_name = "Opportunity"

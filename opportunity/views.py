@@ -106,7 +106,7 @@ class OpportunityListView(APIView, LimitOffsetPagination):
 
     @extend_schema(
         tags=["Opportunities"],
-        parameters=swagger_params1.organization_params,request=OpportunityCreateSwaggerSerializer
+        parameters=swagger_params1.organization_params,request=OpportunityCreateSerializer
     )
     def post(self, request, *args, **kwargs):
         params = request.data
@@ -190,7 +190,7 @@ class OpportunityDetailView(APIView):
 
     @extend_schema(
         tags=["Opportunities"],
-        parameters=swagger_params1.organization_params,request=OpportunityCreateSwaggerSerializer
+        parameters=swagger_params1.organization_params,request=OpportunityCreateSerializer
     )
     def put(self, request, pk, format=None):
         params = request.data
@@ -198,7 +198,7 @@ class OpportunityDetailView(APIView):
         contacts_new_old = opportunity_object.get_contacts_list
         if opportunity_object.org != request.profile.org:
             return Response(
-                {"error": True, "errors": "User company doesnot match with header...."},
+                {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
@@ -297,7 +297,7 @@ class OpportunityDetailView(APIView):
         self.object = self.get_object(pk)
         if self.object.org != request.profile.org:
             return Response(
-                {"error": True, "errors": "User company doesnot match with header...."},
+                {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
@@ -403,7 +403,7 @@ class OpportunityDetailView(APIView):
         self.opportunity_obj = Opportunity.objects.get(pk=pk)
         if self.opportunity_obj.org != request.profile.org:
             return Response(
-                {"error": True, "errors": "User company doesnot match with header...."},
+                {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         comment_serializer = CommentSerializer(data=params)
