@@ -6,6 +6,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import json
 
 from accounts.models import Account, Tags
 from common import crm_permissions
@@ -180,7 +181,8 @@ class LeadListView(APIView, LimitOffsetPagination):
         tags=["Leads"],description="Leads Create", parameters=swagger_params1.organization_params,request=LeadCreateSwaggerSerializer
     )
     def post(self, request, *args, **kwargs):
-        data = request.data
+        data = json.loads(request.data.get("form_data"))
+        
         serializer = LeadCreateSerializer(data=data, request_obj=request)
         if serializer.is_valid():
             lead_obj = serializer.save(created_by=request.profile.user
