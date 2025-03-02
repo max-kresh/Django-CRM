@@ -372,6 +372,13 @@ class LeadDetailView(APIView):
                 "assigned_data": assigned_data,
             }
         )
+        contacts = Contact.objects.filter(org=self.request.profile.org).values(
+            "id", "first_name", "last_name", "organization","title", 
+            "primary_email", "mobile_number", 
+            "address__address_line", "address__city", "address__street", "address__state",
+            "address__postcode", "address__country"
+        )
+        context["contacts"] = contacts
         context["users"] = ProfileSerializer(users, many=True).data
         context["users_excluding_team"] = ProfileSerializer(
             users_excluding_team, many=True
@@ -381,7 +388,11 @@ class LeadDetailView(APIView):
         context["teams"] = TeamsSerializer(
             Teams.objects.filter(org=self.request.profile.org), many=True
         ).data
-
+        context["companies"] = CompanySerializer(
+            Company.objects.filter(org=self.request.profile.org), many=True
+        ).data
+        context["tags"] = TagsSerializer(Tags.objects.all(), many=True).data
+        context["industries"] = INDCHOICES
         return context
 
     @extend_schema(tags=["Leads"],parameters=swagger_params1.organization_params,description="Lead Detail")
