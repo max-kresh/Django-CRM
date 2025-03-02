@@ -330,19 +330,24 @@ class LeadDetailView(APIView):
                 )
             )
         elif self.request.profile.user != self.lead_obj.created_by:
-            users_mention = [{"username": self.lead_obj.created_by.username}]
+            users_mention = [{"username": self.lead_obj.created_by.email}]
         else:
             users_mention = list(
                 self.lead_obj.assigned_to.all().values("user__email")
             )
         if self.request.profile.role == Constants.ADMIN or self.request.user.is_superuser:
             users = Profile.objects.filter(
-                is_active=True, org=self.request.profile.org
+                ~Q(role=Constants.USER), is_active=True, org=self.request.profile.org
             ).order_by("user__email")
-        else:
-            users = Profile.objects.filter(role=Constants.ADMIN, org=self.request.profile.org).order_by(
-                "user__email"
-            )
+        elif self.request.profile.role == Constants.SALES_MANAGER:
+            users = Profile.objects.filter(
+                role__in=[Constants.SALES_MANAGER, Constants.SALES_REPRESENTATIVE], is_active=True, org=self.request.profile.org
+            ).order_by("user__email")
+        elif self.request.profile.role == Constants.SALES_REPRESENTATIVE:
+            users = Profile.objects.filter(
+                user__id=self.request.user.id, is_active=True, org=self.request.profile.org
+            ).order_by("user__email")
+
         user_assgn_list = [
             assigned_to.id
             for assigned_to in self.lead_obj.get_assigned_users_not_in_teams
