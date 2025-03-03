@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from accounts.models import Account, Tags
 from accounts.serializer import AccountSerializer, TagsSerailizer
 from common.models import Attachments, Comment, Profile
+from leads.models import Lead
 
 #from common.external_auth import CustomDualAuthentication
 from common.serializer import (
@@ -86,6 +87,10 @@ class OpportunityListView(APIView, LimitOffsetPagination):
                 "offset": offset,
             }
         )
+
+        leads = Lead.objects.filter(org=self.request.profile.org).exclude(
+            Q(status="converted") | Q(status="closed")
+        )
         context["opportunities"] = opportunities
         context["accounts_list"] = AccountSerializer(accounts, many=True).data
         context["contacts_list"] = ContactSerializer(contacts, many=True).data
@@ -93,6 +98,7 @@ class OpportunityListView(APIView, LimitOffsetPagination):
         context["stage"] = STAGES
         context["lead_source"] = SOURCES
         context["currency"] = CURRENCY_CODES
+        context["leads"] = LeadSerializer(leads, many=True).data
 
         return context
 
@@ -366,7 +372,9 @@ class OpportunityDetailView(APIView):
                 users_mention = []
         else:
             users_mention = []
-
+        leads = Lead.objects.filter(org=self.request.profile.org).exclude(
+            Q(status="converted") | Q(status="closed")
+        )
         context.update(
             {
                 "comments": CommentSerializer(
@@ -389,6 +397,7 @@ class OpportunityDetailView(APIView):
                 "currency": CURRENCY_CODES,
                 "comment_permission": comment_permission,
                 "users_mention": users_mention,
+                "leads": LeadSerializer(leads, many=True).data,
             }
         )
         return Response(context)
