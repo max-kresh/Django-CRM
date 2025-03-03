@@ -193,7 +193,7 @@ class LeadListView(APIView, LimitOffsetPagination):
             if data.get("tags",None):
                 tags = data.get("tags")
                 for t in tags:
-                    tag, is_new = Tags.objects.get_or_create(name=t)
+                    tag, _ = Tags.objects.get_or_create(name=t)
                     lead_obj.tags.add(tag)
 
             if data.get("contacts",None):
@@ -355,7 +355,7 @@ class LeadDetailView(APIView):
 
         if self.request.profile.user == self.lead_obj.created_by:
             user_assgn_list.append(self.request.profile.id)
-        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
+        if self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] and not self.request.user.is_superuser:
             if self.request.profile.id not in user_assgn_list:
                 return Response(
                     {
@@ -461,7 +461,7 @@ class LeadDetailView(APIView):
 
     @extend_schema(tags=["Leads"], parameters=swagger_params1.organization_params,request=LeadCreateSwaggerSerializer)
     def put(self, request, pk, **kwargs):
-        params = request.data
+        params = json.loads(request.data.get("form_data"))
         self.lead_obj = self.get_object(pk)
         contacts_new_old = self.lead_obj.get_contacts_list
         if self.lead_obj.org != request.profile.org:
@@ -485,15 +485,8 @@ class LeadDetailView(APIView):
             lead_obj.tags.clear()
             if params.get("tags"):
                 tags = params.get("tags")
-                # for t in tags:
-                #     tag,_ = Tags.objects.get_or_create(name=t)
-                #     lead_obj.tags.add(tag)
                 for t in tags:
-                    tag = Tags.objects.filter(slug=t.lower())
-                    if tag.exists():
-                        tag = tag[0]
-                    else:
-                        tag = Tags.objects.create(name=t)
+                    tag,_ = Tags.objects.get_or_create(name=t)
                     lead_obj.tags.add(tag)
 
             assigned_to_list = list(
@@ -515,7 +508,7 @@ class LeadDetailView(APIView):
             lead_obj.contacts.clear()
             if params.get("contacts"):
                 obj_contact = Contact.objects.filter(
-                    id=params.get("contacts"), org=request.profile.org
+                    id__in=params.get("contacts"), org=request.profile.org
                 )
                 lead_obj.contacts.add(*obj_contact)
                 contacts_new_old.extend(obj_contact.all())
@@ -531,7 +524,8 @@ class LeadDetailView(APIView):
             if params.get("assigned_to"):
                 assinged_to_list = params.get("assigned_to")
                 profiles = Profile.objects.filter(
-                    id__in=assinged_to_list, org=request.profile.org
+                    id__in=assinged_to_list, 
+                    org=request.profile.org
                 )
                 lead_obj.assigned_to.add(*profiles)
 
@@ -817,7 +811,6 @@ class CompaniesView(APIView):
     )
     def post(self, request, *args, **kwargs):
         request.data['org'] = request.profile.org.id
-        print(request.data)
         company=CompanySerializer(data=request.data)
         if Company.objects.filter(**request.data).exists():
             return Response(

@@ -149,7 +149,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             "website",
             "description",
             "address_line",
-            # "contacts",
+            "contacts",
             "street",
             "city",
             "state",
@@ -163,7 +163,6 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             "organization",
             "probability",
             "close_date",
-            # "lead_attachment",
         )
 
 class LeadCreateSwaggerSerializer(serializers.ModelSerializer):
