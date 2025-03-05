@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from common.models import Address
 from common.serializer import (
     AttachmentsSerializer,
     BillingAddressSerializer,
@@ -64,38 +65,14 @@ class ContactSerializer(serializers.ModelSerializer):
 
 
 class CreateContactSerializer(serializers.ModelSerializer):
+    address = BillingAddressSerializer(required=False)
     def __init__(self, *args, **kwargs):
         request_obj = kwargs.pop("request_obj", None)
         super().__init__(*args, **kwargs)
         if request_obj:
             self.org = request_obj.profile.org
     
-    # The validation of the first name is cancelled. Because this method enforces that 
-    # there can not be multiple contacts with the same first name. In reality organizations
-    # can have multiple contacts with first name and even with first and last name. Uniques of 
-    # some other fields (e.g. primary email and phone) are already constrained by the model.
-    # (Mithat and Yunus IT-22)
-    # 
-    # def validate_first_name(self, first_name):
-    #     if self.instance:
-    #         if (
-    #             Contact.objects.filter(first_name__iexact=first_name, org=self.org)
-    #             .exclude(id=self.instance.id)
-    #             .exists()
-    #         ):
-    #             raise serializers.ValidationError(
-    #                 "Contact already exists with this name"
-    #             )
-
-    #     else:
-    #         if Contact.objects.filter(
-    #             first_name__iexact=first_name, org=self.org
-    #         ).exists():
-    #             raise serializers.ValidationError(
-    #                 "Contact already exists with this name"
-    #             )
-    #     return first_name
-
+    
     class Meta:
         model = Contact
         fields = (
@@ -119,6 +96,25 @@ class CreateContactSerializer(serializers.ModelSerializer):
             "twitter_username",
         )
 
+    def create(self, validated_data):
+        address_data = validated_data.pop("address", None)
+        if address_data:
+            address_instance, created = Address.objects.get_or_create(**address_data)
+            validated_data["address"] = address_instance
+        contact_instance = Contact.objects.create(**validated_data)
+        
+        return contact_instance
+
+    def update(self, instance, validated_data):
+        address_data = validated_data.pop("address", None)
+        if address_data:
+            address_instance, created = Address.objects.get_or_create(**address_data)
+            instance.address = address_instance
+            instance.save()
+
+        return super().update(instance, validated_data)
+
+    
 
 class ContactDetailEditSwaggerSerializer(serializers.Serializer):
     comment = serializers.CharField()
