@@ -697,6 +697,50 @@ class LeadAttachmentView(APIView):
     #authentication_classes = (CustomDualAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(tags=["Leads"], parameters=swagger_params1.organization_params,
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {
+                    "lead_attachment": {"type": "string", "format": "binary"}
+                },
+                "required": ["lead_attachment"]
+            }
+        },
+        responses={status.HTTP_201_CREATED: [AttachmentsSerializer()]}
+    )
+    def post(self, request, pk, *args, **kwargs):
+        lead_obj = Lead.objects.get(pk=pk)
+        if not lead_obj:
+            return Response(
+                {"error": True, "message": "No such lead"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        files = request.FILES.getlist("lead_attachment")
+        if files and len(files) > 0:
+            attachments = []
+            for file in files:
+                attachment = Attachments()
+                attachment.created_by = request.profile.user
+                attachment.file_name = file.name
+                attachment.lead = lead_obj
+                attachment.attachment = file
+                attachment.save()
+                attachments.append(AttachmentsSerializer(attachment).data)
+            return Response(
+                {
+                    "error": False, 
+                    "message": "Attachment uploaded", 
+                    "attachments": attachments
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(
+                {"error": True, "message": "File not uploaded"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
     @extend_schema(tags=["Leads"], parameters=swagger_params1.organization_params)
     def delete(self, request, pk, format=None):
         self.object = self.model.objects.get(pk=pk)
