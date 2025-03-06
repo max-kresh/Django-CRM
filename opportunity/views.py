@@ -256,9 +256,7 @@ class OpportunityDetailView(APIView):
 
             if params.get("stage"):
                 stage = params.get("stage")
-                print("stage", stage,"updated_opportunity_object.stage",updated_opportunity_object.stage,"opportunity_object.stage",current_opportunity_stage)
                 if current_opportunity_stage != updated_opportunity_object.stage:
-                    print("history", updated_opportunity_object.stage)
                     OpportunityStageHistory.objects.create(
                         opportunity=updated_opportunity_object,
                         old_stage=current_opportunity_stage,
