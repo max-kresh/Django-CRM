@@ -669,12 +669,13 @@ class LeadCommentView(APIView):
         comment_serializer = CommentSerializer(data=params)
         if comment_serializer.is_valid():
             if params.get("comment"):
-                comment_serializer.save(
+                new_comment = comment_serializer.save(
                     commented_on= datetime.datetime.now(),
                     commented_by= self.request.profile,
                     lead=self.lead_obj,
                     commented_by_id=self.request.profile.id,
                 )
+                return Response({"comment": LeadCommentSerializer(new_comment).data})
         else:
             return Response(
                 {
@@ -684,9 +685,6 @@ class LeadCommentView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        comments = Comment.objects.filter(lead__id=self.lead_obj.id).order_by("-id") 
- 
-        return Response({"comments": LeadCommentSerializer(comments, many=True).data})
     @extend_schema(tags=["Leads"], parameters=swagger_params1.organization_params,request=LeadCommentEditSwaggerSerializer)
     def put(self, request, pk, format=None):
         params = request.data
