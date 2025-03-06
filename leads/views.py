@@ -1,5 +1,7 @@
+import datetime
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.db.models import F
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.pagination import LimitOffsetPagination
@@ -641,6 +643,50 @@ class LeadCommentView(APIView):
     def get_object(self, pk):
         return self.model.objects.get(pk=pk)
 
+    @extend_schema(tags=["Leads"], parameters=swagger_params1.organization_params,request=LeadCommentEditSwaggerSerializer)
+    def post(self, request, pk, **kwargs):
+        params = request.data
+        self.lead_obj = Lead.objects.get(pk=pk)
+        if self.lead_obj.org != request.profile.org:
+            return Response(
+                {"error": True, "errors": "User company does not match with header...."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if self.request.profile.role \
+            not in [Constants.ADMIN, Constants.SALES_MANAGER] \
+            and not self.request.user.is_superuser:
+            if not (
+                (self.request.profile.user == self.lead_obj.created_by)
+                or (self.request.profile in self.lead_obj.assigned_to.all())
+            ):
+                return Response(
+                    {
+                        "error": True,
+                        "errors": "You do not have Permission to perform this action",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        comment_serializer = CommentSerializer(data=params)
+        if comment_serializer.is_valid():
+            if params.get("comment"):
+                comment_serializer.save(
+                    commented_on= datetime.datetime.now(),
+                    commented_by= self.request.profile,
+                    lead=self.lead_obj,
+                    commented_by_id=self.request.profile.id,
+                )
+        else:
+            return Response(
+                {
+                    "error": True,
+                    "errors": "Invalid content",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        comments = Comment.objects.filter(lead__id=self.lead_obj.id).order_by("-id") 
+ 
+        return Response({"comments": LeadCommentSerializer(comments, many=True).data})
     @extend_schema(tags=["Leads"], parameters=swagger_params1.organization_params,request=LeadCommentEditSwaggerSerializer)
     def put(self, request, pk, format=None):
         params = request.data

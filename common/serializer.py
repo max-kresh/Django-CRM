@@ -62,6 +62,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class LeadCommentSerializer(serializers.ModelSerializer):
+    commented_by_email = serializers.SerializerMethodField()
+
     class Meta:
         model = Comment
         fields = (
@@ -70,7 +72,11 @@ class LeadCommentSerializer(serializers.ModelSerializer):
             "commented_on",
             "commented_by",
             "lead",
+            "commented_by_email",  
         )
+
+    def get_commented_by_email(self, obj):
+        return obj.commented_by.user.email if obj.commented_by and obj.commented_by.user else ''
 
 
 class OrgProfileCreateSerializer(serializers.ModelSerializer):
