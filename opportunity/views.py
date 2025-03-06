@@ -22,7 +22,7 @@ from common.utils import CURRENCY_CODES, SOURCES, STAGES, Constants
 from contacts.models import Contact
 from contacts.serializer import ContactSerializer
 from opportunity import swagger_params1
-from opportunity.models import Opportunity
+from opportunity.models import Opportunity, OpportunityStageHistory
 from opportunity.serializer import *
 from opportunity.tasks import send_email_to_assigned_user
 from teams.models import Teams
@@ -112,10 +112,18 @@ class OpportunityListView(APIView, LimitOffsetPagination):
         params = request.data
         serializer = OpportunityCreateSerializer(data=params, request_obj=request)
         if serializer.is_valid():
+
             opportunity_obj = serializer.save(
                 created_by=request.profile.user,
                 closed_on=params.get("due_date"),
                 org=request.profile.org,
+            )
+
+            OpportunityStageHistory.objects.create(
+            opportunity=opportunity_obj,
+            old_stage=None, 
+            new_stage=opportunity_obj.stage,
+            changed_by=request.profile,
             )
 
             if params.get("contacts"):
@@ -195,6 +203,7 @@ class OpportunityDetailView(APIView):
     def put(self, request, pk, format=None):
         params = request.data
         opportunity_object = self.get_object(pk=pk)
+        current_opportunity_stage = opportunity_object.stage
         contacts_new_old = opportunity_object.get_contacts_list
         if opportunity_object.org != request.profile.org:
             return Response(
@@ -222,18 +231,19 @@ class OpportunityDetailView(APIView):
         )
 
         if serializer.is_valid():
-            opportunity_object = serializer.save(closed_on=params.get("due_date"))
+            updated_opportunity_object = serializer.save(closed_on=params.get("due_date"))
             previous_assigned_to_users = list(
-                opportunity_object.assigned_to.all().values_list("id", flat=True)
+                updated_opportunity_object.assigned_to.all().values_list("id", flat=True)
             )
-            opportunity_object.contacts.clear()
+            updated_opportunity_object.contacts.clear()
             if params.get("contacts"):
                 contacts_list = params.get("contacts")
                 contacts = Contact.objects.filter(id__in=contacts_list, org=request.profile.org)
-                opportunity_object.contacts.add(*contacts)
+                updated_opportunity_object.contacts.add(*contacts)
                 contacts_new_old.extend(contacts.all())
             update_contacts_category(contacts_new_old)
-            opportunity_object.tags.clear()
+            updated_opportunity_object.tags.clear()
+
             if params.get("tags"):
                 tags = params.get("tags")
                 for tag in tags:
@@ -242,26 +252,35 @@ class OpportunityDetailView(APIView):
                         obj_tag = obj_tag[0]
                     else:
                         obj_tag = Tags.objects.create(name=tag)
-                    opportunity_object.tags.add(obj_tag)
+                    updated_opportunity_object.tags.add(obj_tag)
 
             if params.get("stage"):
                 stage = params.get("stage")
+                print("stage", stage,"updated_opportunity_object.stage",updated_opportunity_object.stage,"opportunity_object.stage",current_opportunity_stage)
+                if current_opportunity_stage != updated_opportunity_object.stage:
+                    print("history", updated_opportunity_object.stage)
+                    OpportunityStageHistory.objects.create(
+                        opportunity=updated_opportunity_object,
+                        old_stage=current_opportunity_stage,
+                        new_stage=updated_opportunity_object.stage,
+                        changed_by=request.profile,
+                    )
                 if stage in ["CLOSED WON", "CLOSED LOST"]:
-                    opportunity_object.closed_by = self.request.profile
+                    updated_opportunity_object.closed_by = self.request.profile
 
-            opportunity_object.teams.clear()
+            updated_opportunity_object.teams.clear()
             if params.get("teams"):
                 teams_list = params.get("teams")
                 teams = Teams.objects.filter(id__in=teams_list, org=request.profile.org)
-                opportunity_object.teams.add(*teams)
+                updated_opportunity_object.teams.add(*teams)
 
-            opportunity_object.assigned_to.clear()
+            updated_opportunity_object.assigned_to.clear()
             if params.get("assigned_to"):
                 assinged_to_list = params.get("assigned_to")
                 profiles = Profile.objects.filter(
                     id__in=assinged_to_list, org=request.profile.org, is_active=True
                 )
-                opportunity_object.assigned_to.add(*profiles)
+                updated_opportunity_object.assigned_to.add(*profiles)
 
             if self.request.FILES.get("opportunity_attachment"):
                 attachment = Attachments()
@@ -269,17 +288,17 @@ class OpportunityDetailView(APIView):
                 attachment.file_name = self.request.FILES.get(
                     "opportunity_attachment"
                 ).name
-                attachment.opportunity = opportunity_object
+                attachment.opportunity = updated_opportunity_object
                 attachment.attachment = self.request.FILES.get("opportunity_attachment")
                 attachment.save()
 
             assigned_to_list = list(
-                opportunity_object.assigned_to.all().values_list("id", flat=True)
+                updated_opportunity_object.assigned_to.all().values_list("id", flat=True)
             )
             recipients = list(set(assigned_to_list) - set(previous_assigned_to_users))
             send_email_to_assigned_user.delay(
                 recipients,
-                opportunity_object.id,
+                updated_opportunity_object.id,
             )
             return Response(
                 {"error": False, "message": "Opportunity Updated Successfully"},
@@ -366,7 +385,6 @@ class OpportunityDetailView(APIView):
                 users_mention = []
         else:
             users_mention = []
-
         context.update(
             {
                 "comments": CommentSerializer(
@@ -382,6 +400,12 @@ class OpportunityDetailView(APIView):
                     Profile.objects.filter(
                         is_active=True, org=self.request.profile.org
                     ).order_by("user__email"),
+                    many=True,
+                ).data,
+                "stage_history": OpportunityStageHistorySerializer(
+                    OpportunityStageHistory.objects.filter(
+                        opportunity=self.opportunity
+                    ).order_by("-changed_at"),
                     many=True,
                 ).data,
                 "stage": STAGES,

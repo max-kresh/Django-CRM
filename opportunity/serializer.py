@@ -4,7 +4,7 @@ from accounts.models import Tags
 from accounts.serializer import AccountSerializer
 from common.serializer import AttachmentsSerializer, ProfileSerializer,UserSerializer
 from contacts.serializer import ContactSerializer
-from opportunity.models import Opportunity
+from opportunity.models import Opportunity, OpportunityStageHistory
 from teams.serializer import TeamsSerializer
 
 
@@ -101,6 +101,16 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             # "get_team_users",
             # "get_team_and_assigned_users",
             # "get_assigned_users_not_in_teams",
+        )
+class OpportunityStageHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunityStageHistory
+        fields = (
+            "opportunity",
+            "old_stage",
+            "new_stage",
+            "changed_by",
+            "changed_at",
         )
 
 class OpportunityCreateSwaggerSerializer(serializers.ModelSerializer):
