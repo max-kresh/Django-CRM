@@ -103,6 +103,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             # "get_assigned_users_not_in_teams",
         )
 class OpportunityStageHistorySerializer(serializers.ModelSerializer):
+    changed_by = ProfileSerializer()
     class Meta:
         model = OpportunityStageHistory
         fields = (
