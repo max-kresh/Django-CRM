@@ -100,6 +100,11 @@ class OpportunityListView(APIView, LimitOffsetPagination):
         context["currency"] = CURRENCY_CODES
         context["leads"] = LeadSerializer(leads, many=True).data
 
+        users = Profile.objects.filter(is_active=True, org=self.request.profile.org).values(
+            "id", "user__email"
+        )
+        context["users"] = users
+
         return context
 
     @extend_schema(
