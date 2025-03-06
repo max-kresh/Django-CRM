@@ -186,7 +186,14 @@ class LeadListView(APIView, LimitOffsetPagination):
         tags=["Leads"],description="Leads Create", parameters=swagger_params1.organization_params,request=LeadCreateSwaggerSerializer
     )
     def post(self, request, *args, **kwargs):
-        data = json.loads(request.data.get("form_data"))
+        data = None
+        # TODO This is temp solution for diff btw swagger and front-end. To be fixed later
+        try:
+            # Front end
+            data = json.loads(request.data.get("form_data"))
+        except:
+            # Swagger
+            data = request.data
         
         serializer = LeadCreateSerializer(data=data, request_obj=request)
         if serializer.is_valid():
