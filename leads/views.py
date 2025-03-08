@@ -703,9 +703,9 @@ class LeadCommentView(APIView):
         ):
             serializer = LeadCommentSerializer(obj, data=params)
             if serializer.is_valid():
-                serializer.save()
+                comment = serializer.save()
                 return Response(
-                    {"error": False, "message": "Comment Submitted"},
+                    {"error": False, "comment": LeadCommentSerializer(comment).data},
                     status=status.HTTP_200_OK,
                 )
             return Response(
