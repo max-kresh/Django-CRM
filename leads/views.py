@@ -255,11 +255,11 @@ class LeadListView(APIView, LimitOffsetPagination):
                 account_object.billing_state = lead_obj.state
                 account_object.billing_postcode = lead_obj.postcode
                 account_object.billing_country = lead_obj.country
-                comments = Comment.objects.filter(lead=self.lead_obj)
+                comments = Comment.objects.filter(lead=lead_obj)
                 if comments.exists():
                     for comment in comments:
                         comment.account_id = account_object.id
-                attachments = Attachments.objects.filter(lead=self.lead_obj)
+                attachments = Attachments.objects.filter(lead=lead_obj)
                 if attachments.exists():
                     for attachment in attachments:
                         attachment.account_id = account_object.id
