@@ -621,6 +621,12 @@ class LeadUploadView(APIView):
     #authentication_classes = (CustomDualAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [crm_permissions.CanModifyLeads()] 
+        else:
+            return [crm_permissions.CanListLeads()]
+
     @extend_schema(tags=["Leads"], parameters=swagger_params1.organization_params,request=LeadUploadSwaggerSerializer)
     def post(self, request, *args, **kwargs):
         lead_form = LeadListForm(request.POST, request.FILES)
@@ -646,6 +652,12 @@ class LeadCommentView(APIView):
     model = Comment
     #authentication_classes = (CustomDualAuthentication,)
     permission_classes = (IsAuthenticated,)
+
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [crm_permissions.CanModifyLeads()] 
+        else:
+            return [crm_permissions.CanListLeads()]
 
     def get_object(self, pk):
         return self.model.objects.get(pk=pk)
@@ -696,11 +708,9 @@ class LeadCommentView(APIView):
     def put(self, request, pk, format=None):
         params = request.data
         obj = self.get_object(pk)
-        if (
-            request.profile.role == Constants.ADMIN
-            or request.user.is_superuser
-            or request.profile == obj.commented_by
-        ):
+        
+        # Allow edits only for the owner of the comment
+        if (request.profile == obj.commented_by):
             serializer = LeadCommentSerializer(obj, data=params)
             if serializer.is_valid():
                 comment = serializer.save()
@@ -747,6 +757,12 @@ class LeadAttachmentView(APIView):
     model = Attachments
     #authentication_classes = (CustomDualAuthentication,)
     permission_classes = (IsAuthenticated,)
+
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [crm_permissions.CanModifyLeads()] 
+        else:
+            return [crm_permissions.CanListLeads()]
 
     @extend_schema(tags=["Leads"], parameters=swagger_params1.organization_params,
         request={
