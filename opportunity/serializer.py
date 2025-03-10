@@ -4,7 +4,7 @@ from accounts.models import Tags
 from accounts.serializer import AccountSerializer
 from common.serializer import AttachmentsSerializer, ProfileSerializer,UserSerializer
 from contacts.serializer import ContactSerializer
-from opportunity.models import Opportunity
+from opportunity.models import Opportunity, OpportunityStageHistory
 from teams.serializer import TeamsSerializer
 from leads.serializer import LeadSerializer
 
@@ -98,9 +98,22 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "created_at",
             "is_active",
             "created_on_arrow",
-            "org",
+            "org"
             "lead"
         )
+class OpportunityStageHistorySerializer(serializers.ModelSerializer):
+    changed_by = ProfileSerializer()
+    class Meta:
+        model = OpportunityStageHistory
+        fields = (
+            "opportunity",
+            "old_stage",
+            "new_stage",
+            "changed_by",
+            "changed_at",
+        )
+
+
 
 class OpportunityDetailEditSwaggerSerializer(serializers.Serializer):
     comment = serializers.CharField()

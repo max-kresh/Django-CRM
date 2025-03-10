@@ -72,7 +72,7 @@ class Opportunity(BaseModel):
 
     def __str__(self):
         return f"{self.name}"
-
+    
     @property
     def created_on_arrow(self):
         return arrow.get(self.created_at).humanize()
@@ -99,3 +99,14 @@ class Opportunity(BaseModel):
     @property
     def get_contacts_list(self):
         return list(self.contacts.all())
+
+
+class OpportunityStageHistory(models.Model):
+    opportunity = models.ForeignKey(Opportunity, on_delete=models.CASCADE, related_name="stage_history")
+    old_stage = models.CharField(max_length=64, choices=STAGES, null=True)
+    new_stage = models.CharField(max_length=64, choices=STAGES)
+    changed_by = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.opportunity.name} changed from {self.old_stage} to {self.new_stage}"
