@@ -113,8 +113,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         in the db. To differentiate accounts a unique name is needed. )"""
         account_name = data.get("account_name")
         if account_name:
-            account_exists = Account.objects \
-                .filter(name=account_name, org=self.org)
+            account_exists = Account.objects.filter(name=account_name, org=self.org)
             if self.instance: 
                 account_exists.exclude(lead__id=self.instance.id) 
             if account_exists.exists():

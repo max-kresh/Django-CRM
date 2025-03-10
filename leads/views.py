@@ -671,9 +671,9 @@ class LeadCommentView(APIView):
                 {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if self.request.profile.role \
-            not in [Constants.ADMIN, Constants.SALES_MANAGER] \
-            and not self.request.user.is_superuser:
+        if (
+            self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
+            and not self.request.user.is_superuser):
             if not (
                 (self.request.profile.user == self.lead_obj.created_by)
                 or (self.request.profile in self.lead_obj.assigned_to.all())
