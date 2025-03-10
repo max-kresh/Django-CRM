@@ -98,7 +98,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "created_at",
             "is_active",
             "created_on_arrow",
-            "org"
+            "org",
             "lead"
         )
 class OpportunityStageHistorySerializer(serializers.ModelSerializer):
