@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from accounts.models import Account, Tags
 from accounts.serializer import AccountSerializer, TagsSerailizer
 from common.models import Attachments, Comment, Profile
+from leads.models import Lead
 
 #from common.external_auth import CustomDualAuthentication
 from common.serializer import (
@@ -86,6 +87,10 @@ class OpportunityListView(APIView, LimitOffsetPagination):
                 "offset": offset,
             }
         )
+
+        leads = Lead.objects.filter(org=self.request.profile.org).exclude(
+            Q(status="converted") | Q(status="closed")
+        )
         context["opportunities"] = opportunities
         context["accounts_list"] = AccountSerializer(accounts, many=True).data
         context["contacts_list"] = ContactSerializer(contacts, many=True).data
@@ -93,6 +98,12 @@ class OpportunityListView(APIView, LimitOffsetPagination):
         context["stage"] = STAGES
         context["lead_source"] = SOURCES
         context["currency"] = CURRENCY_CODES
+        context["leads"] = LeadSerializer(leads, many=True).data
+
+        users = Profile.objects.filter(is_active=True, org=self.request.profile.org).values(
+            "id", "user__email"
+        )
+        context["users"] = users
 
         return context
 
@@ -106,7 +117,7 @@ class OpportunityListView(APIView, LimitOffsetPagination):
 
     @extend_schema(
         tags=["Opportunities"],
-        parameters=swagger_params1.organization_params,request=OpportunityCreateSwaggerSerializer
+        parameters=swagger_params1.organization_params,request=OpportunityCreateSerializer
     )
     def post(self, request, *args, **kwargs):
         params = request.data
@@ -198,7 +209,7 @@ class OpportunityDetailView(APIView):
 
     @extend_schema(
         tags=["Opportunities"],
-        parameters=swagger_params1.organization_params,request=OpportunityCreateSwaggerSerializer
+        parameters=swagger_params1.organization_params,request=OpportunityCreateSerializer
     )
     def put(self, request, pk, format=None):
         params = request.data
@@ -207,7 +218,7 @@ class OpportunityDetailView(APIView):
         contacts_new_old = opportunity_object.get_contacts_list
         if opportunity_object.org != request.profile.org:
             return Response(
-                {"error": True, "errors": "User company doesnot match with header...."},
+                {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
@@ -314,7 +325,7 @@ class OpportunityDetailView(APIView):
         self.object = self.get_object(pk)
         if self.object.org != request.profile.org:
             return Response(
-                {"error": True, "errors": "User company doesnot match with header...."},
+                {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
@@ -383,6 +394,9 @@ class OpportunityDetailView(APIView):
                 users_mention = []
         else:
             users_mention = []
+        leads = Lead.objects.filter(org=self.request.profile.org).exclude(
+            Q(status="converted") | Q(status="closed")
+        )
         context.update(
             {
                 "comments": CommentSerializer(
@@ -411,6 +425,7 @@ class OpportunityDetailView(APIView):
                 "currency": CURRENCY_CODES,
                 "comment_permission": comment_permission,
                 "users_mention": users_mention,
+                "leads": LeadSerializer(leads, many=True).data,
             }
         )
         return Response(context)
@@ -425,7 +440,7 @@ class OpportunityDetailView(APIView):
         self.opportunity_obj = Opportunity.objects.get(pk=pk)
         if self.opportunity_obj.org != request.profile.org:
             return Response(
-                {"error": True, "errors": "User company doesnot match with header...."},
+                {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         comment_serializer = CommentSerializer(data=params)

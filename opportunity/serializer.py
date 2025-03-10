@@ -6,6 +6,7 @@ from common.serializer import AttachmentsSerializer, ProfileSerializer,UserSeria
 from contacts.serializer import ContactSerializer
 from opportunity.models import Opportunity, OpportunityStageHistory
 from teams.serializer import TeamsSerializer
+from leads.serializer import LeadSerializer
 
 
 class TagsSerializer(serializers.ModelSerializer):
@@ -23,6 +24,7 @@ class OpportunitySerializer(serializers.ModelSerializer):
     contacts = ContactSerializer(read_only=True, many=True)
     teams = TeamsSerializer(read_only=True, many=True)
     opportunity_attachment = AttachmentsSerializer(read_only=True, many=True)
+    lead = LeadSerializer(read_only=True, many=False)
 
     class Meta:
         model = Opportunity
@@ -48,9 +50,7 @@ class OpportunitySerializer(serializers.ModelSerializer):
             "teams",
             "created_on_arrow",
             "account",
-            # "get_team_users",
-            # "get_team_and_assigned_users",
-            # "get_assigned_users_not_in_teams",
+            "lead"
         )
 
 
@@ -61,7 +61,8 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         request_obj = kwargs.pop("request_obj", None)
         super().__init__(*args, **kwargs)
-        self.org = request_obj.profile.org
+        if request_obj:
+            self.org = request_obj.profile.org
 
     def validate_name(self, name):
         if self.instance:
@@ -98,9 +99,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "is_active",
             "created_on_arrow",
             "org"
-            # "get_team_users",
-            # "get_team_and_assigned_users",
-            # "get_assigned_users_not_in_teams",
+            "lead"
         )
 class OpportunityStageHistorySerializer(serializers.ModelSerializer):
     changed_by = ProfileSerializer()
@@ -114,27 +113,7 @@ class OpportunityStageHistorySerializer(serializers.ModelSerializer):
             "changed_at",
         )
 
-class OpportunityCreateSwaggerSerializer(serializers.ModelSerializer):
-    due_date = serializers.DateField()
-    opportunity_attachment = serializers.FileField()
-    class Meta:
-        model = Opportunity
-        fields = (
-            "name",
-            "account",
-            "amount",
-            "currency",
-            "stage",
-            "teams",
-            "lead_source",
-            "probability",
-            "description",
-            "assigned_to",
-            "contacts",
-            "due_date",
-            "tags",
-            "opportunity_attachment"
-        )
+
 
 class OpportunityDetailEditSwaggerSerializer(serializers.Serializer):
     comment = serializers.CharField()
