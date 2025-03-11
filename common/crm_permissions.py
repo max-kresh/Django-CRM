@@ -76,3 +76,38 @@ class CanModifyUsers(BasePermission):
             return False
         # Check if the user is an Admin and the request method is for modification
         return IsAdmin().has_permission(request, view) and request.method in Constants.HTTP_WRITE_METHODS
+    
+class CanListLeads(BasePermission):
+    """Allows GET requests for Admin, Sales Manager and Sales Representative roles."""
+    
+    def has_permission(self, request, view):
+        # Check if the user has the required role and the request method is safe
+        if not request.user.is_authenticated:
+            return False
+        return (
+            (
+                IsAdmin().has_permission(request, view) or 
+                IsSalesManager().has_permission(request, view) or
+                IsSalesRep().has_permission(request, view)
+            ) 
+            and request.method in ["GET"]
+        )
+
+
+class CanModifyLeads(BasePermission):
+    """Current implementation of this permission is exactly the 
+     same with that of CanListLeads class. It is added here for convenience.
+     Allows POST, PUT, or DELETE requests for Admin, Sales Manger and 
+     Sales Representative roles."""
+    
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        return (
+            (
+                IsAdmin().has_permission(request, view) or 
+                IsSalesManager().has_permission(request, view) or
+                IsSalesRep().has_permission(request, view)
+            ) 
+            and request.method in Constants.HTTP_WRITE_METHODS
+        )

@@ -105,22 +105,20 @@ class LeadCreateSerializer(serializers.ModelSerializer):
                 prev_choices = prev_choices + [("micropyramid", "Micropyramid")]
                 self.fields["source"]._set_choices(prev_choices)
 
-    def validate_account_name(self, account_name):
-        if self.instance:
-            if (
-                Account.objects.filter(name__iexact=account_name, org=self.org)
-                .exclude(id=self.instance.id)
-                .exists()
-            ):
-                raise serializers.ValidationError(
-                    "Account already exists with this name"
-                )
-        else:
-            if Account.objects.filter(name__iexact=account_name, org=self.org).exists():
-                raise serializers.ValidationError(
-                    "Account already exists with this name"
-                )
-        return account_name
+    def validate(self, data):
+        """This validation function check if there already exists an account in 
+        the db with the same name. If so it adds lead title to the provided 
+        account name to make the name unique. (This is needed, because whenever 
+        a lead's status is set to 'converted' a new account object is created 
+        in the db. To differentiate accounts a unique name is needed. )"""
+        account_name = data.get("account_name")
+        if account_name:
+            account_exists = Account.objects.filter(name=account_name, org=self.org)
+            if self.instance: 
+                account_exists.exclude(lead__id=self.instance.id) 
+            if account_exists.exists():
+                data["account_name"] = f"{account_name} (From Lead {data.get("title")})"
+        return data
 
     def validate_title(self, title):
         if self.instance:
@@ -149,7 +147,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             "website",
             "description",
             "address_line",
-            # "contacts",
+            "contacts",
             "street",
             "city",
             "state",
@@ -163,7 +161,6 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             "organization",
             "probability",
             "close_date",
-            # "lead_attachment",
         )
 
 class LeadCreateSwaggerSerializer(serializers.ModelSerializer):
