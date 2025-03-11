@@ -2,7 +2,7 @@ from django.urls import include, path
 
 app_name = "common_urls"
 urlpatterns = [
-    path("", include(("common.urls"))),
+    path("", include(("common.urls"), namespace="api_common")),
     path("accounts/", include("accounts.urls", namespace="api_accounts")),
     path("contacts/", include("contacts.urls", namespace="api_contacts")),
     path("leads/", include("leads.urls", namespace="api_leads")),
