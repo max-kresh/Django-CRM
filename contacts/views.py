@@ -107,7 +107,6 @@ class ContactsListView(APIView, LimitOffsetPagination):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         contact_obj = contact_serializer.save(date_of_birth=params.get("date_of_birth"))
-        contact_obj.category = None
         contact_obj.org = request.profile.org
         contact_obj.save()
 
@@ -135,7 +134,7 @@ class ContactsListView(APIView, LimitOffsetPagination):
             attachment.attachment = request.FILES.get("contact_attachment")
             attachment.save()
         return Response(
-            {"error": False, "message": "Contact created Successfuly"},
+            {"error": False, "message": "Contact created successfully", "contact": ContactSerializer(contact_obj).data},
             status=status.HTTP_200_OK,
         )
 
@@ -155,7 +154,7 @@ class ContactDetailView(APIView):
         contact_obj = self.get_object(pk=pk)
         if contact_obj.org != request.profile.org:
             return Response(
-                {"error": True, "errors": "User company doesnot match with header...."},
+                {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         contact_serializer = CreateContactSerializer(
@@ -227,7 +226,7 @@ class ContactDetailView(APIView):
                 attachment.attachment = request.FILES.get("contact_attachment")
                 attachment.save()
             return Response(
-                {"error": False, "message": "Contact Updated Successfully"},
+                {"error": False, "message": "Contact Updated Successfully", "contact": ContactSerializer(contact_obj).data},
                 status=status.HTTP_200_OK,
             )
 

@@ -66,6 +66,8 @@ class ContactSerializer(serializers.ModelSerializer):
 
 class CreateContactSerializer(serializers.ModelSerializer):
     address = BillingAddressSerializer(required=False)
+    is_prospect = serializers.BooleanField(required=False, default=False)
+
     def __init__(self, *args, **kwargs):
         request_obj = kwargs.pop("request_obj", None)
         super().__init__(*args, **kwargs)
@@ -94,6 +96,7 @@ class CreateContactSerializer(serializers.ModelSerializer):
             "linked_in_url",
             "facebook_url",
             "twitter_username",
+            "is_prospect",
         )
 
     def create(self, validated_data):
@@ -101,6 +104,9 @@ class CreateContactSerializer(serializers.ModelSerializer):
         if address_data:
             address_instance, created = Address.objects.get_or_create(**address_data)
             validated_data["address"] = address_instance
+
+        is_prospect = validated_data.pop("is_prospect")
+        validated_data["category"] = "Prospect" if is_prospect else None
         contact_instance = Contact.objects.create(**validated_data)
         
         return contact_instance
@@ -111,6 +117,10 @@ class CreateContactSerializer(serializers.ModelSerializer):
             address_instance, created = Address.objects.get_or_create(**address_data)
             instance.address = address_instance
             instance.save()
+        
+        is_prospect = validated_data.pop("is_prospect")
+        if instance.category in [None, "Prospect"]:
+            validated_data["category"] = "Prospect" if is_prospect else None
 
         return super().update(instance, validated_data)
 

@@ -73,6 +73,8 @@ class GetProfileAndOrg(object):
                         )
                     if profile:
                         request.profile = profile
+                else:
+                    raise AuthenticationFailed('Invalid organization name', code=status.HTTP_401_UNAUTHORIZED)
         except AuthenticationFailed as e:
             raise AuthenticationFailed(e)
         except:
