@@ -311,7 +311,7 @@ class ContactDetailView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
         if (
-            self.request.profile.role != Constants.ADMIN
+            self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER]
             and not self.request.profile.is_admin
             and self.request.profile != self.object.created_by
         ):
@@ -492,7 +492,7 @@ class ContactAttachmentView(APIView):
     def delete(self, request, pk, format=None):
         self.object = get_object_or_404(self.model, pk=pk)
         if (
-            request.profile.role == Constants.ADMIN
+            request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]
             or request.profile.is_admin
             or request.profile.user == self.object.created_by
         ):
