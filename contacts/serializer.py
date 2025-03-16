@@ -23,9 +23,13 @@ class ContactSerializer(serializers.ModelSerializer):
     date_of_birth = serializers.DateField()
     org = OrganizationSerializer()
     country = serializers.SerializerMethodField()
+    created_by_email = serializers.SerializerMethodField()
 
     def get_country(self, obj):
         return obj.get_country_display()
+    
+    def get_created_by_email(self, obj):
+        return obj.created_by.email
 
     class Meta:
         model = Contact
@@ -61,7 +65,8 @@ class ContactSerializer(serializers.ModelSerializer):
             "get_team_and_assigned_users",
             "get_assigned_users_not_in_teams",
             "org",
-            "category"
+            "category",
+            "created_by_email"
         )
 
 
