@@ -252,7 +252,8 @@ class ContactDetailView(APIView):
             user_assgn_list.append(self.request.profile.id)
         if self.request.profile.user == contact_obj.created_by:
             user_assgn_list.append(self.request.profile.id)
-        if self.request.profile.role != Constants.ADMIN and not self.request.profile.is_admin:
+        if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
+            and not self.request.profile.is_admin):
             if self.request.profile.id not in user_assgn_list:
                 return Response(
                     {
@@ -268,7 +269,8 @@ class ContactDetailView(APIView):
             assigned_dict["name"] = each.user.email
             assigned_data.append(assigned_dict)
 
-        if self.request.profile.is_admin or self.request.profile.role == Constants.ADMIN:
+        if (self.request.profile.is_admin 
+            or self.request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]):
             users_mention = list(
                 Profile.objects.filter(is_active=True, org=request.profile.org).values(
                     "user__email"
@@ -434,7 +436,7 @@ class ContactCommentView(APIView):
         params = request.data
         comment = self.get_object(pk)
         if (
-            request.profile.role == Constants.ADMIN
+            request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]
             or request.profile.is_admin
             or request.profile == comment.commented_by
         ):
@@ -463,7 +465,7 @@ class ContactCommentView(APIView):
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
         if (
-            request.profile.role == Constants.ADMIN
+            request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]
             or request.profile.is_admin
             or request.profile == self.object.commented_by
         ):
@@ -516,7 +518,8 @@ class ContactAttachmentView(APIView):
         params = request.data
         context = {}
         self.contact_obj = get_object_or_404(Contact, pk=pk, org=request.profile.org)
-        if self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] and not self.request.profile.is_admin:
+        if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
+            and not self.request.profile.is_admin):
             if not (
                 (self.request.profile.user == self.contact_obj.created_by)
                 or (self.request.profile.user in self.contact_obj.assigned_to.all())

@@ -113,12 +113,11 @@ class CreateContactSerializer(serializers.ModelSerializer):
             address_instance, created = Address.objects.get_or_create(**address_data)
             validated_data["address"] = address_instance
 
-        if hasattr(validated_data, "is_prospect"):
-            prospect_data = validated_data.pop("is_prospect")
-            # Category of a contact is not a 'basic' contact info. Thus regular
-            #   users can not set it.
-            if self.user_role is not Constants.USER:
-                validated_data["category"] = PROSPECT if prospect_data else None          
+        prospect_data = validated_data.pop("is_prospect")
+        # Category of a contact is not a 'basic' contact info. Thus regular
+        #   users can not set it.
+        if self.user_role is not Constants.USER:
+            validated_data["category"] = PROSPECT if prospect_data else None          
             
 
         contact_instance = Contact.objects.create(**validated_data)
@@ -138,12 +137,17 @@ class CreateContactSerializer(serializers.ModelSerializer):
         # 2. Do not update the category if is_prospect field is not provided
         # 3. If a contact has already a category different than 
         #   'Prospect' (e.g. 'Lead') do not allow it be set as 'Prospect'
-        if hasattr(validated_data, "is_prospect") and validated_data.get('is_prospect') is not None:
+        if validated_data.get('is_prospect') is not None:
             prospect_data = validated_data.pop("is_prospect")
             if (self.user_role is not Constants.USER 
                 and prospect_data is not None
-                and instance.category in [PROSPECT, None]):
-                    validated_data["category"] = PROSPECT if prospect_data else None
+                and (
+                    not instance.category 
+                    or len(instance.category.strip()) == 0  
+                    or instance.category.strip() == PROSPECT
+                )
+            ):
+                validated_data["category"] = PROSPECT if prospect_data else None
 
         return super().update(instance, validated_data)
 
