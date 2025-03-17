@@ -20,6 +20,7 @@ class Task(BaseModel):
     PRIORITY_CHOICES = (("Low", "Low"), ("Medium", "Medium"), ("High", "High"))
 
     title = models.CharField(_("title"), max_length=200)
+    description = models.TextField(_("description"), default="Blank", null=False, blank=False)
     status = models.CharField(_("status"), max_length=50, choices=STATUS_CHOICES)
     priority = models.CharField(_("priority"), max_length=50, choices=PRIORITY_CHOICES)
     due_date = models.DateField(blank=True, null=True)
@@ -34,14 +35,6 @@ class Task(BaseModel):
     contacts = models.ManyToManyField(Contact, related_name="contacts_tasks")
 
     assigned_to = models.ManyToManyField(Profile, related_name="users_tasks")
-
-    # created_by = models.ForeignKey(
-    #     Profile,
-    #     related_name="task_created",
-    #     blank=True,
-    #     null=True,
-    #     on_delete=models.SET_NULL,
-    # )
     teams = models.ManyToManyField(Teams, related_name="tasks_teams")
     org = models.ForeignKey(
         Org, on_delete=models.SET_NULL, null=True, blank=True, related_name="task_org"

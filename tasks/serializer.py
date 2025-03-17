@@ -1,3 +1,5 @@
+import datetime
+
 from rest_framework import serializers
 
 from common.serializer import (
@@ -24,6 +26,7 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "title",
+            "description",
             "status",
             "priority",
             "due_date",
@@ -45,6 +48,13 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         self.org = request_obj.profile.org
 
         self.fields["title"].required = True
+        self.fields["description"].required = True
+
+    def validate_due_date(self, val):
+        if datetime.date.today() > val:
+            raise serializers.ValidationError("Due date must occur after current time")
+        return val
+
 
     def validate_title(self, title):
         if self.instance:
@@ -64,6 +74,7 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "title",
+            "description",
             "status",
             "priority",
             "due_date",
@@ -84,6 +95,7 @@ class TaskCreateSwaggerSerializer(serializers.ModelSerializer):
         model = Task
         fields = (
             "title",
+            "description",
             "status",
             "priority",
             "due_date",
