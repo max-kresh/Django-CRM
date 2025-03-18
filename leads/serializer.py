@@ -117,7 +117,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             if self.instance: 
                 account_exists.exclude(lead__id=self.instance.id) 
             if account_exists.exists():
-                data["account_name"] = f"{account_name} (From Lead {data.get("title")})"
+                data["account_name"] = f"{account_name} (From Lead {data.get('title')})"
         return data
 
     def validate_title(self, title):
