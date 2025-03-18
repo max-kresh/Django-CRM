@@ -161,6 +161,7 @@ EVENT_STATUS = (
 )
 
 CONTACT_CATEGORIES = (
+    ("Prospect", "Prospect"),
     ("Lead", "Lead"),
     ("Opportunity", "Opportunity"),
     ("Account", "Account"),

@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from django.db.models import Q
@@ -34,7 +35,8 @@ class ContactsListView(APIView, LimitOffsetPagination):
     def get_context_data(self, **kwargs):
         params = self.request.query_params
         queryset = self.model.objects.filter(org=self.request.profile.org).order_by("-id")
-        if self.request.profile.role != Constants.ADMIN and not self.request.profile.is_admin:
+        if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
+            and not self.request.profile.is_admin):
             queryset = queryset.filter(
                 Q(assigned_to__in=[self.request.profile])
                 | Q(created_by=self.request.profile.user)
@@ -85,14 +87,14 @@ class ContactsListView(APIView, LimitOffsetPagination):
         return context
 
     @extend_schema(
-        tags=["contacts"], parameters=swagger_params1.contact_list_get_params
+        tags=["Contacts"], parameters=swagger_params1.contact_list_get_params
     )
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         return Response(context)
 
     @extend_schema(
-        tags=["contacts"], parameters=swagger_params1.organization_params,request=CreateContactSerializer
+        tags=["Contacts"], parameters=swagger_params1.organization_params,request=CreateContactSerializer
     )
     def post(self, request, *args, **kwargs):
         params = request.data
@@ -107,7 +109,6 @@ class ContactsListView(APIView, LimitOffsetPagination):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         contact_obj = contact_serializer.save(date_of_birth=params.get("date_of_birth"))
-        contact_obj.category = None
         contact_obj.org = request.profile.org
         contact_obj.save()
 
@@ -135,7 +136,7 @@ class ContactsListView(APIView, LimitOffsetPagination):
             attachment.attachment = request.FILES.get("contact_attachment")
             attachment.save()
         return Response(
-            {"error": False, "message": "Contact created Successfuly"},
+            {"error": False, "message": "Contact created successfully", "contact": ContactSerializer(contact_obj).data},
             status=status.HTTP_200_OK,
         )
 
@@ -144,18 +145,18 @@ class ContactDetailView(APIView):
     permission_classes = (IsAuthenticated,)
     model = Contact
 
-    def get_object(self, pk):
-        return get_object_or_404(Contact, pk=pk)
+    def get_object(self, pk, org):
+        return get_object_or_404(Contact, pk=pk, org=org)
 
     @extend_schema(
-         tags=["contacts"], parameters=swagger_params1.organization_params,request=CreateContactSerializer
+         tags=["Contacts"], parameters=swagger_params1.organization_params,request=CreateContactSerializer
     )
     def put(self, request, pk, format=None):
         data = request.data
-        contact_obj = self.get_object(pk=pk)
+        contact_obj = self.get_object(pk=pk, org=request.profile.org)
         if contact_obj.org != request.profile.org:
             return Response(
-                {"error": True, "errors": "User company doesnot match with header...."},
+                {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         contact_serializer = CreateContactSerializer(
@@ -173,12 +174,12 @@ class ContactDetailView(APIView):
 
         if contact_serializer.is_valid():
             if (
-                self.request.profile.role != Constants.ADMIN
+                self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER]
                 and not self.request.profile.is_admin
             ):
                 if not (
-                    (self.request.profile == contact_obj.created_by)
-                    or (self.request.profile in contact_obj.assigned_to.all())
+                    (self.request.profile.user == contact_obj.created_by)
+                    or (self.request.profile.user in contact_obj.assigned_to.all())
                 ):
                     return Response(
                         {
@@ -227,16 +228,16 @@ class ContactDetailView(APIView):
                 attachment.attachment = request.FILES.get("contact_attachment")
                 attachment.save()
             return Response(
-                {"error": False, "message": "Contact Updated Successfully"},
+                {"error": False, "message": "Contact Updated Successfully", "contact": ContactSerializer(contact_obj).data},
                 status=status.HTTP_200_OK,
             )
 
     @extend_schema(
-        tags=["contacts"], parameters=swagger_params1.organization_params
+        tags=["Contacts"], parameters=swagger_params1.organization_params
     )
     def get(self, request, pk, format=None):
         context = {}
-        contact_obj = self.get_object(pk)
+        contact_obj = self.get_object(pk, request.profile.org)
         context["contact_obj"] = ContactSerializer(contact_obj).data
         user_assgn_list = [
             assigned_to.id for assigned_to in contact_obj.assigned_to.all()
@@ -249,9 +250,10 @@ class ContactDetailView(APIView):
         )
         if user_assigned_accounts.intersection(contact_accounts):
             user_assgn_list.append(self.request.profile.id)
-        if self.request.profile == contact_obj.created_by:
+        if self.request.profile.user == contact_obj.created_by:
             user_assgn_list.append(self.request.profile.id)
-        if self.request.profile.role != Constants.ADMIN and not self.request.profile.is_admin:
+        if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
+            and not self.request.profile.is_admin):
             if self.request.profile.id not in user_assgn_list:
                 return Response(
                     {
@@ -267,18 +269,19 @@ class ContactDetailView(APIView):
             assigned_dict["name"] = each.user.email
             assigned_data.append(assigned_dict)
 
-        if self.request.profile.is_admin or self.request.profile.role == Constants.ADMIN:
+        if (self.request.profile.is_admin 
+            or self.request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]):
             users_mention = list(
                 Profile.objects.filter(is_active=True, org=request.profile.org).values(
                     "user__email"
                 )
             )
-        elif self.request.profile != contact_obj.created_by:
-            users_mention = [{"username": contact_obj.created_by.user.email}]
+        elif self.request.profile.user != contact_obj.created_by:
+            users_mention = [{"username": contact_obj.created_by.email}]
         else:
             users_mention = list(contact_obj.assigned_to.all().values("user__email"))
 
-        if request.profile == contact_obj.created_by:
+        if request.profile.user == contact_obj.created_by:
             user_assgn_list.append(self.request.profile.id)
 
         context["address_obj"] = BillingAddressSerializer(contact_obj.address).data
@@ -300,17 +303,17 @@ class ContactDetailView(APIView):
         return Response(context)
 
     @extend_schema(
-        tags=["contacts"], parameters=swagger_params1.organization_params
+        tags=["Contacts"], parameters=swagger_params1.organization_params
     )
     def delete(self, request, pk, format=None):
-        self.object = self.get_object(pk)
+        self.object = self.get_object(pk, org=request.profile.org)
         if self.object.org != request.profile.org:
             return Response(
                 {"error": True, "errors": "User company doesnot match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if (
-            self.request.profile.role != Constants.ADMIN
+            self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER]
             and not self.request.profile.is_admin
             and self.request.profile != self.object.created_by
         ):
@@ -326,20 +329,200 @@ class ContactDetailView(APIView):
         self.object.delete()
         return Response(
             {"error": False, "message": "Contact Deleted Successfully."},
-            status=status.HTTP_200_OK,
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+    # @extend_schema(
+    #     tags=["Contacts"], parameters=swagger_params1.organization_params,request=ContactDetailEditSwaggerSerializer
+    # )
+    # def post(self, request, pk, **kwargs):
+    #     params = request.data
+    #     context = {}
+    #     self.contact_obj = Contact.objects.get(pk=pk)
+    #     if self.request.profile.role != Constants.ADMIN and not self.request.profile.is_admin:
+    #         if not (
+    #             (self.request.profile.user == self.contact_obj.created_by)
+    #             or (self.request.profile.user in self.contact_obj.assigned_to.all())
+    #         ):
+    #             return Response(
+    #                 {
+    #                     "error": True,
+    #                     "errors": "You do not have Permission to perform this action",
+    #                 },
+    #                 status=status.HTTP_403_FORBIDDEN,
+    #             )
+    #     comment_serializer = CommentSerializer(data=params)
+    #     if comment_serializer.is_valid():
+    #         if params.get("comment"):
+    #             comment_serializer.save(
+    #                 contact_id=self.contact_obj.id,
+    #                 commented_by_id=self.request.profile.id,
+    #             )
+
+    #     if self.request.FILES.get("contact_attachment"):
+    #         attachment = Attachments()
+    #         attachment.created_by = self.request.profile.user
+    #         attachment.file_name = self.request.FILES.get("contact_attachment").name
+    #         attachment.contact = self.contact_obj
+    #         attachment.attachment = self.request.FILES.get("contact_attachment")
+    #         attachment.save()
+
+    #     comments = Comment.objects.filter(contact__id=self.contact_obj.id).order_by(
+    #         "-id"
+    #     )
+    #     attachments = Attachments.objects.filter(
+    #         contact__id=self.contact_obj.id
+    #     ).order_by("-id")
+    #     context.update(
+    #         {
+    #             "contact_obj": ContactSerializer(self.contact_obj).data,
+    #             "attachments": AttachmentsSerializer(attachments, many=True).data,
+    #             "comments": CommentSerializer(comments, many=True).data,
+    #         }
+    #     )
+    #     return Response(context)
+
+
+class ContactCommentView(APIView):
+    model = Comment
+    # #authentication_classes = (CustomDualAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, pk):
+        return get_object_or_404(self.model, pk=pk)
+    
+    @extend_schema(tags=["Contacts"], parameters=swagger_params1.organization_params,request=ContactCommentEditSwaggerSerializer)
+    def post(self, request, pk, **kwargs):
+        params = request.data
+        self.contact_obj = get_object_or_404(Contact, pk=pk, org=request.profile.org)
+    
+        if (
+            self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
+            and not self.request.user.is_superuser):
+            if not (
+                (self.request.profile.user == self.contact_obj.created_by)
+                or (self.request.profile in self.contact_obj.assigned_to.all())
+            ):
+                return Response(
+                    {
+                        "error": True,
+                        "errors": "You do not have Permission to perform this action",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        comment_serializer = CommentSerializer(data=params)
+        if comment_serializer.is_valid():
+            if params.get("comment"):
+                new_comment = comment_serializer.save(
+                    commented_on= datetime.datetime.now(),
+                    commented_by= self.request.profile,
+                    contact=self.contact_obj,
+                    # commented_by_id=self.request.profile.id,
+                )
+                return Response({"comment": ContactCommentSerializer(new_comment).data})
+        else:
+            return Response(
+                {
+                    "error": True,
+                    "errors": "Invalid content",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @extend_schema(
+        tags=["Contacts"], parameters=swagger_params1.organization_params,request=ContactCommentEditSwaggerSerializer
+    )
+    def put(self, request, pk, format=None):
+        params = request.data
+        comment = self.get_object(pk)
+        if (
+            request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]
+            or request.profile.is_admin
+            or request.profile == comment.commented_by
+        ):
+            serializer = CommentSerializer(comment, data=params)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"error": False, "message": "Comment Submitted"},
+                    status=status.HTTP_200_OK,
+                )
+            return Response(
+                {"error": True, "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {
+                "error": True,
+                "errors": "You don't have permission to edit this Comment",
+            },
+            status=status.HTTP_403_FORBIDDEN,
         )
 
     @extend_schema(
-        tags=["contacts"], parameters=swagger_params1.organization_params,request=ContactDetailEditSwaggerSerializer
+        tags=["Contacts"], parameters=swagger_params1.organization_params
+    )
+    def delete(self, request, pk, format=None):
+        self.object = self.get_object(pk)
+        if (
+            request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]
+            or request.profile.is_admin
+            or request.profile == self.object.commented_by
+        ):
+            self.object.delete()
+            return Response(
+                {"error": False, "message": "Comment Deleted Successfully"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        return Response(
+            {
+                "error": True,
+                "errors": "You don't have permission to perform this action",
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+
+class ContactAttachmentView(APIView):
+    model = Attachments
+    # #authentication_classes = (CustomDualAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=["Contacts"], parameters=swagger_params1.organization_params
+    )
+    def delete(self, request, pk, format=None):
+        self.object = get_object_or_404(self.model, pk=pk)
+        if (
+            request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]
+            or request.profile.is_admin
+            or request.profile.user == self.object.created_by
+        ):
+            self.object.delete()
+            return Response(
+                {"error": False, "message": "Attachment Deleted Successfully"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        return Response(
+            {
+                "error": True,
+                "errors": "You don't have permission to delete this Attachment",
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    
+    @extend_schema(
+        tags=["Contacts"], parameters=swagger_params1.organization_params,request=ContactAttachmentSwaggerSerializer
     )
     def post(self, request, pk, **kwargs):
         params = request.data
         context = {}
-        self.contact_obj = Contact.objects.get(pk=pk)
-        if self.request.profile.role != Constants.ADMIN and not self.request.profile.is_admin:
+        self.contact_obj = get_object_or_404(Contact, pk=pk, org=request.profile.org)
+        if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
+            and not self.request.profile.is_admin):
             if not (
-                (self.request.profile == self.contact_obj.created_by)
-                or (self.request.profile in self.contact_obj.assigned_to.all())
+                (self.request.profile.user == self.contact_obj.created_by)
+                or (self.request.profile.user in self.contact_obj.assigned_to.all())
             ):
                 return Response(
                     {
@@ -354,7 +537,6 @@ class ContactDetailView(APIView):
                 comment_serializer.save(
                     contact_id=self.contact_obj.id,
                     commented_by_id=self.request.profile.id,
-                    org=request.profile.org,
                 )
 
         if self.request.FILES.get("contact_attachment"):
@@ -379,94 +561,3 @@ class ContactDetailView(APIView):
             }
         )
         return Response(context)
-
-
-class ContactCommentView(APIView):
-    model = Comment
-    # #authentication_classes = (CustomDualAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
-    def get_object(self, pk):
-        return self.model.objects.get(pk=pk)
-
-    @extend_schema(
-        tags=["contacts"], parameters=swagger_params1.organization_params,request=ContactCommentEditSwaggerSerializer
-    )
-    def put(self, request, pk, format=None):
-        params = request.data
-        obj = self.get_object(pk)
-        if (
-            request.profile.role == Constants.ADMIN
-            or request.profile.is_admin
-            or request.profile == obj.commented_by
-        ):
-            serializer = CommentSerializer(obj, data=params)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(
-                    {"error": False, "message": "Comment Submitted"},
-                    status=status.HTTP_200_OK,
-                )
-            return Response(
-                {"error": True, "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return Response(
-            {
-                "error": True,
-                "errors": "You don't have permission to edit this Comment",
-            },
-            status=status.HTTP_403_FORBIDDEN,
-        )
-
-    @extend_schema(
-        tags=["contacts"], parameters=swagger_params1.organization_params
-    )
-    def delete(self, request, pk, format=None):
-        self.object = self.get_object(pk)
-        if (
-            request.profile.role == Constants.ADMIN
-            or request.profile.is_admin
-            or request.profile == self.object.commented_by
-        ):
-            self.object.delete()
-            return Response(
-                {"error": False, "message": "Comment Deleted Successfully"},
-                status=status.HTTP_200_OK,
-            )
-        return Response(
-            {
-                "error": True,
-                "errors": "You don't have permission to perform this action",
-            },
-            status=status.HTTP_403_FORBIDDEN,
-        )
-
-
-class ContactAttachmentView(APIView):
-    model = Attachments
-    # #authentication_classes = (CustomDualAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
-    @extend_schema(
-        tags=["contacts"], parameters=swagger_params1.organization_params
-    )
-    def delete(self, request, pk, format=None):
-        self.object = self.model.objects.get(pk=pk)
-        if (
-            request.profile.role == Constants.ADMIN
-            or request.profile.is_admin
-            or request.profile == self.object.created_by
-        ):
-            self.object.delete()
-            return Response(
-                {"error": False, "message": "Attachment Deleted Successfully"},
-                status=status.HTTP_200_OK,
-            )
-        return Response(
-            {
-                "error": True,
-                "errors": "You don't have permission to delete this Attachment",
-            },
-            status=status.HTTP_403_FORBIDDEN,
-        )

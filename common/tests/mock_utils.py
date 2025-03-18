@@ -53,3 +53,21 @@ def create_test_user(email = "", org_name = "Test_Org", role = Constants.USER):
     profile.save()
     print(f"{user} is created with password {password}")
     return user
+
+
+def create_test_users():
+    users = [
+         {"email": "admin@example.com", "role": Constants.ADMIN},
+         {"email": "sm@example.com", "role": Constants.SALES_MANAGER},
+         {"email": "srep1@example.com", "role": Constants.SALES_REPRESENTATIVE},
+         {"email": "srep2@example.com", "role": Constants.SALES_REPRESENTATIVE},
+         {"email": "srep3@example.com", "role": Constants.SALES_REPRESENTATIVE},
+         {"email": "user1@example.com", "role": Constants.USER},
+         {"email": "user2@example.com", "role": Constants.USER},
+         {"email": "user3@example.com", "role": Constants.USER},
+    ]
+    for user in users:
+        try:
+              create_test_user(email=user["email"], role=user["role"])
+        except Exception as e:
+             print(e)
