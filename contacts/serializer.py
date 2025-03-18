@@ -144,7 +144,7 @@ class CreateContactSerializer(serializers.ModelSerializer):
                 and (
                     not instance.category 
                     or len(instance.category.strip()) == 0  
-                    or instance.category.strip() == PROSPECT
+                    or PROSPECT == instance.category.strip()
                 )
             ):
                 validated_data["category"] = PROSPECT if prospect_data else None
