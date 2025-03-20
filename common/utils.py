@@ -165,6 +165,8 @@ CONTACT_CATEGORIES = (
     ("Lead", "Lead"),
     ("Opportunity", "Opportunity"),
     ("Account", "Account"),
+    ("Customer", "Customer"),
+    ("Customer/Lead", "Customer/Lead")
 )
 
 COUNTRIES = (

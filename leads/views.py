@@ -205,13 +205,6 @@ class LeadListView(APIView, LimitOffsetPagination):
                     tag, _ = Tags.objects.get_or_create(name=t)
                     lead_obj.tags.add(tag)
 
-            if data.get("contacts",None):
-                obj_contact = Contact.objects.filter(
-                    id__in=data.get("contacts"), org=request.profile.org
-                )
-                lead_obj.contacts.add(*obj_contact)
-                update_contacts_category(obj_contact)
-
             recipients = list(lead_obj.assigned_to.all().values_list("id", flat=True))
             send_email_to_assigned_user.delay(
                 recipients,
@@ -280,6 +273,14 @@ class LeadListView(APIView, LimitOffsetPagination):
                     },
                     status=status.HTTP_200_OK,
                 )
+            
+            if data.get("contacts",None):
+                obj_contact = Contact.objects.filter(
+                    id__in=data.get("contacts"), org=request.profile.org
+                )
+                lead_obj.contacts.add(*obj_contact)
+                update_contacts_category(obj_contact)
+
             return Response(
                 {"error": False, "message": "Lead Created Successfully"},
                 status=status.HTTP_200_OK,

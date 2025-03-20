@@ -24,12 +24,16 @@ class ContactSerializer(serializers.ModelSerializer):
     org = OrganizationSerializer()
     country = serializers.SerializerMethodField()
     created_by_email = serializers.SerializerMethodField()
+    leads = serializers.SerializerMethodField()
 
     def get_country(self, obj):
         return obj.get_country_display()
     
     def get_created_by_email(self, obj):
         return obj.created_by.email
+    
+    def get_leads(self, obj):
+        return obj.lead_contacts.values("id", "title", "status")
 
     class Meta:
         model = Contact
@@ -66,7 +70,8 @@ class ContactSerializer(serializers.ModelSerializer):
             "get_assigned_users_not_in_teams",
             "org",
             "category",
-            "created_by_email"
+            "created_by_email",
+            "leads"
         )
 
 
