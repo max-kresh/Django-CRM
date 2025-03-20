@@ -348,16 +348,18 @@ class UserDetailView(APIView):
 class ApiHomeView(APIView):
 
     permission_classes = (IsAuthenticated,)
-
+    paginator = LimitOffsetPagination()
+    class PaginationRequest:
+        query_params = {"limit":5 , "offset":0}
     @extend_schema(parameters=swagger_params1.organization_params)
     def get(self, request, format=None):
-        accounts = Account.objects.filter(status="open", org=request.profile.org)
-        contacts = Contact.objects.filter(org=request.profile.org)
-        leads = Lead.objects.filter(org=request.profile.org).exclude(
-            Q(status="converted") | Q(status="closed")
-        )
-        opportunities = Opportunity.objects.filter(org=request.profile.org)
+        pagination_request = self.PaginationRequest()
 
+        accounts= Account.objects.filter(org=request.profile.org)
+        contacts = Contact.objects.filter(org=request.profile.org)
+        leads = Lead.objects.filter(org=request.profile.org)
+        opportunities = Opportunity.objects.filter(org=request.profile.org)
+        
         if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
             accounts = accounts.filter(
                 Q(assigned_to=self.request.profile) | Q(created_by=self.request.profile.user)
@@ -367,22 +369,34 @@ class ApiHomeView(APIView):
                 | Q(created_by=self.request.profile.user)
             )
             leads = leads.filter(
-                Q(assigned_to__id__in=self.request.profile)
-                | Q(created_by=self.request.profile.user)
-            ).exclude(status="closed")
-            opportunities = opportunities.filter(
-                Q(assigned_to__id__in=self.request.profile)
-                | Q(created_by=self.request.profile.user)
+                Q(assigned_to=self.request.profile) | Q(created_by=self.request.profile.user)
             )
+            opportunities = opportunities.filter(
+                Q(assigned_to=self.request.profile) | Q(created_by=self.request.profile.user)
+            )
+        open_accounts = accounts.filter(status="open", org=request.profile.org)
+        closed_accounts = accounts.filter(status="close", org=request.profile.org)
+
+        converted_leads =leads.filter(status="converted")
+        closed_leads = leads.filter(status="closed")
+        assigned_leads = leads.filter(status="assigned")
+        in_process_leads = leads.filter(status="in process")
+        recycled_leads = leads.filter(status="recycled")
+
+        in_process_opportunities = opportunities.exclude(Q(stage="CLOSED WON") | Q(stage="CLOSED LOST"))
+        won_opportunities = opportunities.filter(stage="CLOSED WON")
+        lost_opportunities = opportunities.filter(stage="CLOSED LOST")
+
+        accounts_paginated = self.paginator.paginate_queryset(accounts.order_by("-created_at"), pagination_request, view=self)
+        leads_paginated = self.paginator.paginate_queryset(leads.order_by("-created_at"), pagination_request, view=self)
+        contacts_paginated = self.paginator.paginate_queryset(contacts.order_by("-created_at"), pagination_request, view=self)
+        opportunities_paginated = self.paginator.paginate_queryset(opportunities.order_by("-created_at"), pagination_request, view=self)
         context = {}
-        context["accounts_count"] = accounts.count()
-        context["contacts_count"] = contacts.count()
-        context["leads_count"] = leads.count()
-        context["opportunities_count"] = opportunities.count()
-        context["accounts"] = AccountSerializer(accounts, many=True).data
-        context["contacts"] = ContactSerializer(contacts, many=True).data
-        context["leads"] = LeadSerializer(leads, many=True).data
-        context["opportunities"] = OpportunitySerializer(opportunities, many=True).data
+
+        context["accounts"] = {"open_accounts": open_accounts.count(), "closed_accounts": closed_accounts.count(), "last_five_accounts": AccountSerializer(accounts_paginated, many=True).data}
+        context["contacts"] = {"contacts": contacts.count(), "last_five_contacts": ContactSerializer(contacts_paginated, many=True).data}
+        context["leads"] = {"converted_leads": converted_leads.count(), "closed_leads": closed_leads.count(), "assigned_leads": assigned_leads.count(), "in_process_leads": in_process_leads.count(), "recycled_leads": recycled_leads.count(), "last_five_leads": LeadSerializer(leads_paginated, many=True).data}
+        context["opportunities"] = {"in_process_opportunities": in_process_opportunities.count(), "won_opportunities": won_opportunities.count(), "lost_opportunities": lost_opportunities.count(), "last_five_opportunities": OpportunitySerializer(opportunities_paginated, many=True).data}
         return Response(context, status=status.HTTP_200_OK)
 
 
