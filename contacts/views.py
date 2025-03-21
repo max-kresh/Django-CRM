@@ -315,7 +315,7 @@ class ContactDetailView(APIView):
         if (
             self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER]
             and not self.request.profile.is_admin
-            and self.request.profile != self.object.created_by
+            and self.request.profile.user != self.object.created_by
         ):
             return Response(
                 {
