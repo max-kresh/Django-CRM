@@ -324,14 +324,13 @@ class ContactDetailView(APIView):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if self.object.address_id:
-            self.object.address.delete()
         self.object.delete()
         return Response(
             {"error": False, "message": "Contact Deleted Successfully."},
             status=status.HTTP_204_NO_CONTENT,
         )
 
+    # This commented-out method is kept here for later use.
     # @extend_schema(
     #     tags=["Contacts"], parameters=swagger_params1.organization_params,request=ContactDetailEditSwaggerSerializer
     # )
