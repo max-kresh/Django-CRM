@@ -143,15 +143,11 @@ class OpportunityListView(APIView, LimitOffsetPagination):
                 opportunity_obj.contacts.add(*contacts)
                 update_contacts_category(contacts)
 
-            if params.get("tags"):
+            if params.get("tags",None):
                 tags = params.get("tags")
-                for tag in tags:
-                    obj_tag = Tags.objects.filter(slug=tag.lower())
-                    if obj_tag.exists():
-                        obj_tag = obj_tag[0]
-                    else:
-                        obj_tag = Tags.objects.create(name=tag)
-                    opportunity_obj.tags.add(obj_tag)
+                for t in tags:
+                    tag, _ = Tags.objects.get_or_create(name=t)
+                    opportunity_obj.tags.add(tag)
 
             if params.get("stage"):
                 stage = params.get("stage")
@@ -255,15 +251,11 @@ class OpportunityDetailView(APIView):
             update_contacts_category(contacts_new_old)
             updated_opportunity_object.tags.clear()
 
-            if params.get("tags"):
+            if params.get("tags",None):
                 tags = params.get("tags")
-                for tag in tags:
-                    obj_tag = Tags.objects.filter(slug=tag.lower())
-                    if obj_tag.exists():
-                        obj_tag = obj_tag[0]
-                    else:
-                        obj_tag = Tags.objects.create(name=tag)
-                    updated_opportunity_object.tags.add(obj_tag)
+                for t in tags:
+                    tag, _ = Tags.objects.get_or_create(name=t)
+                    updated_opportunity_object.tags.add(tag)
 
             if params.get("stage"):
                 stage = params.get("stage")
