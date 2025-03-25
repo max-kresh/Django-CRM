@@ -101,6 +101,10 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "org",
             "lead"
         )
+class OpportunityPatchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Opportunity
+        fields = ("stage", )
 class OpportunityStageHistorySerializer(serializers.ModelSerializer):
     changed_by = ProfileSerializer()
     class Meta:

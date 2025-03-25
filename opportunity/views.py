@@ -309,6 +309,71 @@ class OpportunityDetailView(APIView):
             {"error": True, "errors": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,
         )
+    
+    @extend_schema(
+        tags=["Opportunities"],
+        parameters=swagger_params1.organization_params,request=OpportunityPatchSerializer
+    )
+    def patch(self, request, pk, format=None):
+        params = request.data
+        opportunity_object = self.get_object(pk=pk)
+        current_opportunity_stage = opportunity_object.stage
+        if opportunity_object.org != request.profile.org:
+            return Response(
+                {"error": True, "errors": "User company does not match with header...."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
+            if not (
+                (self.request.profile == opportunity_object.created_by)
+                or (self.request.profile in opportunity_object.assigned_to.all())
+            ):
+                return Response(
+                    {
+                        "error": True,
+                        "errors": "You do not have Permission to perform this action",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        serializer = OpportunityPatchSerializer(
+            opportunity_object,
+            data=params,
+        )
+
+        if serializer.is_valid():
+            updated_opportunity_object = serializer.save()
+
+            if params.get("stage"):
+                stage = params.get("stage")
+                if current_opportunity_stage != updated_opportunity_object.stage:
+                    OpportunityStageHistory.objects.create(
+                        opportunity=updated_opportunity_object,
+                        old_stage=current_opportunity_stage,
+                        new_stage=updated_opportunity_object.stage,
+                        changed_by=request.profile,
+                    )
+                if stage in ["CLOSED WON", "CLOSED LOST"]:
+                    updated_opportunity_object.closed_by = self.request.profile
+
+            return Response(
+                {
+                    "error": False, 
+                    "message": "Opportunity Updated Successfully",
+                    "opportunity_obj": OpportunitySerializer(updated_opportunity_object).data,
+                    "stage_history": OpportunityStageHistorySerializer(
+                            OpportunityStageHistory.objects.filter(
+                                opportunity=updated_opportunity_object
+                            ).order_by("-changed_at"),
+                            many=True,
+                        ).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {"error": True, "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     @extend_schema(
         tags=["Opportunities"], parameters=swagger_params1.organization_params
