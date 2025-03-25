@@ -1,7 +1,5 @@
-import json
-
 from django.db.models import Q
-from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
@@ -9,20 +7,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.models import Account
-from accounts.serializer import AccountSerializer
 from common.models import Attachments, Comment, Profile
-
-#from common.external_auth import CustomDualAuthentication
-from common.serializer import (
-    AttachmentsSerializer,
-    CommentSerializer,
-    ProfileSerializer,
-)
 from common.utils import Constants
 from contacts.models import Contact
-from contacts.serializer import ContactSerializer
 from tasks import swagger_params1
-from tasks.models import Task
 from tasks.serializer import *
 from tasks.utils import PRIORITY_CHOICES, STATUS_CHOICES
 from teams.models import Teams
@@ -31,7 +19,6 @@ from teams.serializer import TeamsSerializer
 
 class TaskListView(APIView, LimitOffsetPagination):
     model = Task
-    #authentication_classes = (CustomDualAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_context_data(self, **kwargs):
@@ -39,6 +26,7 @@ class TaskListView(APIView, LimitOffsetPagination):
         queryset = self.model.objects.filter(org=self.request.profile.org).order_by("-id")
         accounts = Account.objects.filter(org=self.request.profile.org)
         contacts = Contact.objects.filter(org=self.request.profile.org)
+        users = Profile.objects.filter(org=self.request.profile.org)
         if self.request.profile.role != Constants.ADMIN and not self.request.profile.is_admin:
             queryset = queryset.filter(
                 Q(assigned_to__in=[self.request.profile])
@@ -50,6 +38,7 @@ class TaskListView(APIView, LimitOffsetPagination):
             contacts = contacts.filter(
                 Q(created_by=self.request.profile.user) | Q(assigned_to=self.request.profile)
             ).distinct()
+            users = users.distinct()
 
         if params:
             if params.get("title"):
@@ -80,6 +69,7 @@ class TaskListView(APIView, LimitOffsetPagination):
         context["priority"] = PRIORITY_CHOICES
         context["accounts_list"] = AccountSerializer(accounts, many=True).data
         context["contacts_list"] = ContactSerializer(contacts, many=True).data
+        context["users_list"] = ProfileSerializer(users, many=True).data
         return context
 
     @extend_schema(

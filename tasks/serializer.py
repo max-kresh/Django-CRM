@@ -2,6 +2,7 @@ import datetime
 
 from rest_framework import serializers
 
+from accounts.serializer import AccountSerializer
 from common.serializer import (
     AttachmentsSerializer,
     CommentSerializer,
@@ -20,6 +21,7 @@ class TaskSerializer(serializers.ModelSerializer):
     teams = TeamsSerializer(read_only=True, many=True)
     task_attachment = AttachmentsSerializer(read_only=True, many=True)
     task_comments = CommentSerializer(read_only=True, many=True)
+    account = AccountSerializer(read_only=True, many=False)
 
     class Meta:
         model = Task

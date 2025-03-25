@@ -24,12 +24,51 @@ class ContactSerializer(serializers.ModelSerializer):
     org = OrganizationSerializer()
     country = serializers.SerializerMethodField()
     created_by_email = serializers.SerializerMethodField()
+    category_details = serializers.SerializerMethodField()
 
     def get_country(self, obj):
         return obj.get_country_display()
     
     def get_created_by_email(self, obj):
         return obj.created_by.email
+    
+    def get_category_details(self, obj):
+        leads = obj.lead_contacts.values("id", "title", "status")
+        
+        details = []
+        is_customer = False
+        is_lead = False
+        for lead in leads:
+            if obj.first_name == "George":
+                n = obj.first_name
+            status = "Customer" if lead["status"].lower() == "converted" else "Lead"
+            is_customer |= status == "Customer"
+            is_lead |= status == "Lead"
+
+            detail = {
+                "lead": lead,
+                "contact_status": status
+            }
+            details.append(detail)
+
+        general_category = ''
+        if is_customer and is_lead:
+            general_category = "Customer/Lead"
+        elif is_customer:
+            general_category = "Customer"
+        elif is_lead:
+                general_category = "Lead"
+        elif obj.category and len(obj.category.strip()) > 0:
+            general_category = obj.category
+        else:
+            general_category = None
+        
+        return {
+            "general_category": general_category,
+            "details": details
+        }
+            
+
 
     class Meta:
         model = Contact
@@ -66,13 +105,14 @@ class ContactSerializer(serializers.ModelSerializer):
             "get_assigned_users_not_in_teams",
             "org",
             "category",
-            "created_by_email"
+            "created_by_email",
+            "category_details"
         )
 
 
 class CreateContactSerializer(serializers.ModelSerializer):
     address = BillingAddressSerializer(required=False)
-    is_prospect = serializers.BooleanField(required=False)
+    is_prospect = serializers.BooleanField(required=False, default=False) # type: ignore
 
     def __init__(self, *args, **kwargs):
         request_obj = kwargs.pop("request_obj", None)
