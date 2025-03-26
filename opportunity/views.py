@@ -234,7 +234,7 @@ class OpportunityDetailView(APIView):
         if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
             and not self.request.user.is_superuser):
             if not (
-                (self.request.profile == opportunity_object.created_by)
+                (self.request.profile.user == opportunity_object.created_by)
                 or (self.request.profile in opportunity_object.assigned_to.all())
             ):
                 return Response(
@@ -341,7 +341,7 @@ class OpportunityDetailView(APIView):
         if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
             and not self.request.user.is_superuser):
             if not (
-                (self.request.profile == opportunity_object.created_by)
+                (self.request.profile.user == opportunity_object.created_by)
                 or (self.request.profile in opportunity_object.assigned_to.all())
             ):
                 return Response(
@@ -403,7 +403,7 @@ class OpportunityDetailView(APIView):
             )
         if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
             and not self.request.user.is_superuser):
-            if self.request.profile != self.object.created_by:
+            if self.request.profile.user != self.object.created_by:
                 return Response(
                     {
                         "error": True,
@@ -434,7 +434,7 @@ class OpportunityDetailView(APIView):
         if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
             and not self.request.user.is_superuser):
             if not (
-                (self.request.profile == self.opportunity.created_by)
+                (self.request.profile.user == self.opportunity.created_by)
                 or (self.request.profile in self.opportunity.assigned_to.all())
             ):
                 return Response(
@@ -448,22 +448,23 @@ class OpportunityDetailView(APIView):
         comment_permission = False
 
         if (
-            self.request.profile == self.opportunity.created_by
+            self.request.profile.user == self.opportunity.created_by
             or self.request.user.is_superuser
-            or self.request.profile.role == Constants.ADMIN
+            or self.request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]
         ):
             comment_permission = True
 
-        if self.request.user.is_superuser or self.request.profile.role == Constants.ADMIN:
+        if (self.request.user.is_superuser or 
+            self.request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]):
             users_mention = list(
                 Profile.objects.filter(is_active=True, org=self.request.profile.org).values(
                     "user__email"
                 )
             )
-        elif self.request.profile != self.opportunity.created_by:
+        elif self.request.profile.user != self.opportunity.created_by:
             if self.opportunity.created_by:
                 users_mention = [
-                    {"username": self.opportunity.created_by.user.email}
+                    {"username": self.opportunity.created_by.email}
                 ]
             else:
                 users_mention = []
@@ -522,7 +523,7 @@ class OpportunityDetailView(APIView):
         if (self.request.profile.role not in [Constants.ADMIN, Constants.SALES_MANAGER] 
             and not self.request.user.is_superuser):
             if not (
-                (self.request.profile == self.opportunity_obj.created_by)
+                (self.request.profile.user == self.opportunity_obj.created_by)
                 or (self.request.profile in self.opportunity_obj.assigned_to.all())
             ):
                 return Response(
@@ -654,7 +655,7 @@ class OpportunityAttachmentView(APIView):
         if (
             request.profile.role in [Constants.ADMIN, Constants.SALES_MANAGER]
             or request.user.is_superuser
-            or request.profile == self.object.created_by
+            or request.profile.user == self.object.created_by
         ):
             self.object.delete()
             return Response(
