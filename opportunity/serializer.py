@@ -57,6 +57,7 @@ class OpportunitySerializer(serializers.ModelSerializer):
 class OpportunityCreateSerializer(serializers.ModelSerializer):
     probability = serializers.IntegerField(max_value=100)
     closed_on = serializers.DateField
+    created_by = UserSerializer(read_only=True)
 
     def __init__(self, *args, **kwargs):
         request_obj = kwargs.pop("request_obj", None)
@@ -94,6 +95,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "probability",
             "closed_on",
             "description",
+            "created_by",
             "is_active",
             "org",
             "lead"
