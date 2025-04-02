@@ -57,6 +57,7 @@ class OpportunitySerializer(serializers.ModelSerializer):
 class OpportunityCreateSerializer(serializers.ModelSerializer):
     probability = serializers.IntegerField(max_value=100)
     closed_on = serializers.DateField
+    created_by = UserSerializer(read_only=True)
 
     def __init__(self, *args, **kwargs):
         request_obj = kwargs.pop("request_obj", None)
@@ -95,12 +96,20 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "closed_on",
             "description",
             "created_by",
-            "created_at",
             "is_active",
-            "created_on_arrow",
             "org",
             "lead"
         )
+
+class OpportunityPatchSerializer(serializers.ModelSerializer):
+    """This class implements opportunity PATCH serializer. Current
+    version implements only 'stage' field. (This serializer
+    is added here for convenience. As new fields are needed to be
+     patched they can be added to this serializer.)"""
+    class Meta:
+        model = Opportunity
+        fields = ("stage", )
+
 class OpportunityStageHistorySerializer(serializers.ModelSerializer):
     changed_by = ProfileSerializer()
     class Meta:

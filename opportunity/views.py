@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from accounts.models import Account, Tags
 from accounts.serializer import AccountSerializer, TagsSerailizer
+from common import crm_permissions
 from common.models import Attachments, Comment, Profile
 from leads.models import Lead
 
@@ -19,7 +20,7 @@ from common.serializer import (
     CommentSerializer,
     ProfileSerializer,
 )
-from common.utils import CURRENCY_CODES, SOURCES, STAGES, Constants
+from common.utils import CURRENCY_CODES, SOURCES, STAGES, Constants, isFullyAuthorizedCrmUser
 from contacts.models import Contact
 from contacts.serializer import ContactSerializer
 from opportunity import swagger_params1
@@ -35,12 +36,18 @@ class OpportunityListView(APIView, LimitOffsetPagination):
     permission_classes = (IsAuthenticated,)
     model = Opportunity
 
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [crm_permissions.CanModifyOpportunities()] 
+        else:
+            return [crm_permissions.CanListOpportunities()]
+
     def get_context_data(self, **kwargs):
         params = self.request.query_params
         queryset = self.model.objects.filter(org=self.request.profile.org).order_by("-id")
         accounts = Account.objects.filter(org=self.request.profile.org)
         contacts = Contact.objects.filter(org=self.request.profile.org)
-        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
+        if not isFullyAuthorizedCrmUser(self.request.profile):
             queryset = queryset.filter(
                 Q(created_by=self.request.profile.user) | Q(assigned_to=self.request.profile)
             ).distinct()
@@ -143,15 +150,11 @@ class OpportunityListView(APIView, LimitOffsetPagination):
                 opportunity_obj.contacts.add(*contacts)
                 update_contacts_category(contacts)
 
-            if params.get("tags"):
+            if params.get("tags",None):
                 tags = params.get("tags")
-                for tag in tags:
-                    obj_tag = Tags.objects.filter(slug=tag.lower())
-                    if obj_tag.exists():
-                        obj_tag = obj_tag[0]
-                    else:
-                        obj_tag = Tags.objects.create(name=tag)
-                    opportunity_obj.tags.add(obj_tag)
+                for t in tags:
+                    tag, _ = Tags.objects.get_or_create(name=t)
+                    opportunity_obj.tags.add(tag)
 
             if params.get("stage"):
                 stage = params.get("stage")
@@ -204,6 +207,12 @@ class OpportunityDetailView(APIView):
     permission_classes = (IsAuthenticated,)
     model = Opportunity
 
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [crm_permissions.CanModifyOpportunities()] 
+        else:
+            return [crm_permissions.CanListOpportunities()]
+
     def get_object(self, pk):
         return self.model.objects.filter(id=pk).first()
 
@@ -221,9 +230,9 @@ class OpportunityDetailView(APIView):
                 {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
+        if not isFullyAuthorizedCrmUser(self.request.profile):
             if not (
-                (self.request.profile == opportunity_object.created_by)
+                (self.request.profile.user == opportunity_object.created_by)
                 or (self.request.profile in opportunity_object.assigned_to.all())
             ):
                 return Response(
@@ -255,15 +264,11 @@ class OpportunityDetailView(APIView):
             update_contacts_category(contacts_new_old)
             updated_opportunity_object.tags.clear()
 
-            if params.get("tags"):
+            if params.get("tags",None):
                 tags = params.get("tags")
-                for tag in tags:
-                    obj_tag = Tags.objects.filter(slug=tag.lower())
-                    if obj_tag.exists():
-                        obj_tag = obj_tag[0]
-                    else:
-                        obj_tag = Tags.objects.create(name=tag)
-                    updated_opportunity_object.tags.add(obj_tag)
+                for t in tags:
+                    tag, _ = Tags.objects.get_or_create(name=t)
+                    updated_opportunity_object.tags.add(tag)
 
             if params.get("stage"):
                 stage = params.get("stage")
@@ -317,6 +322,71 @@ class OpportunityDetailView(APIView):
             {"error": True, "errors": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,
         )
+    
+    @extend_schema(
+        tags=["Opportunities"],
+        parameters=swagger_params1.organization_params,request=OpportunityPatchSerializer
+    )
+    def patch(self, request, pk, format=None):
+        params = request.data
+        opportunity_object = self.get_object(pk=pk)
+        current_opportunity_stage = opportunity_object.stage
+        if opportunity_object.org != request.profile.org:
+            return Response(
+                {"error": True, "errors": "User company does not match with header...."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if not isFullyAuthorizedCrmUser(self.request.profile):
+            if not (
+                (self.request.profile.user == opportunity_object.created_by)
+                or (self.request.profile in opportunity_object.assigned_to.all())
+            ):
+                return Response(
+                    {
+                        "error": True,
+                        "errors": "You do not have Permission to perform this action",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        serializer = OpportunityPatchSerializer(
+            opportunity_object,
+            data=params,
+        )
+
+        if serializer.is_valid():
+            updated_opportunity_object = serializer.save()
+
+            if params.get("stage"):
+                stage = params.get("stage")
+                if current_opportunity_stage != updated_opportunity_object.stage:
+                    OpportunityStageHistory.objects.create(
+                        opportunity=updated_opportunity_object,
+                        old_stage=current_opportunity_stage,
+                        new_stage=updated_opportunity_object.stage,
+                        changed_by=request.profile,
+                    )
+                if stage in ["CLOSED WON", "CLOSED LOST"]:
+                    updated_opportunity_object.closed_by = self.request.profile
+
+            return Response(
+                {
+                    "error": False, 
+                    "message": "Opportunity Updated Successfully",
+                    "opportunity_obj": OpportunitySerializer(updated_opportunity_object).data,
+                    "stage_history": OpportunityStageHistorySerializer(
+                            OpportunityStageHistory.objects.filter(
+                                opportunity=updated_opportunity_object
+                            ).order_by("-changed_at"),
+                            many=True,
+                        ).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {"error": True, "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     @extend_schema(
         tags=["Opportunities"], parameters=swagger_params1.organization_params
@@ -328,8 +398,8 @@ class OpportunityDetailView(APIView):
                 {"error": True, "errors": "User company does not match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
-            if self.request.profile != self.object.created_by:
+        if not isFullyAuthorizedCrmUser(self.request.profile):
+            if self.request.profile.user != self.object.created_by:
                 return Response(
                     {
                         "error": True,
@@ -357,9 +427,9 @@ class OpportunityDetailView(APIView):
                 {"error": True, "errors": "User company doesnot match with header...."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
+        if not isFullyAuthorizedCrmUser(self.request.profile):
             if not (
-                (self.request.profile == self.opportunity.created_by)
+                (self.request.profile.user == self.opportunity.created_by)
                 or (self.request.profile in self.opportunity.assigned_to.all())
             ):
                 return Response(
@@ -373,22 +443,21 @@ class OpportunityDetailView(APIView):
         comment_permission = False
 
         if (
-            self.request.profile == self.opportunity.created_by
-            or self.request.user.is_superuser
-            or self.request.profile.role == Constants.ADMIN
+            self.request.profile.user == self.opportunity.created_by
+            or isFullyAuthorizedCrmUser(self.request.profile)
         ):
             comment_permission = True
 
-        if self.request.user.is_superuser or self.request.profile.role == Constants.ADMIN:
+        if isFullyAuthorizedCrmUser(self.request.profile):
             users_mention = list(
                 Profile.objects.filter(is_active=True, org=self.request.profile.org).values(
                     "user__email"
                 )
             )
-        elif self.request.profile != self.opportunity.created_by:
+        elif self.request.profile.user != self.opportunity.created_by:
             if self.opportunity.created_by:
                 users_mention = [
-                    {"username": self.opportunity.created_by.user.email}
+                    {"username": self.opportunity.created_by.email}
                 ]
             else:
                 users_mention = []
@@ -444,9 +513,9 @@ class OpportunityDetailView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
         comment_serializer = CommentSerializer(data=params)
-        if self.request.profile.role != Constants.ADMIN and not self.request.user.is_superuser:
+        if not isFullyAuthorizedCrmUser(self.request.profile):
             if not (
-                (self.request.profile == self.opportunity_obj.created_by)
+                (self.request.profile.user == self.opportunity_obj.created_by)
                 or (self.request.profile in self.opportunity_obj.assigned_to.all())
             ):
                 return Response(
@@ -494,6 +563,12 @@ class OpportunityCommentView(APIView):
     #authentication_classes = (CustomDualAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [crm_permissions.CanModifyOpportunities()] 
+        else:
+            return [crm_permissions.CanListOpportunities()]
+
     def get_object(self, pk):
         return self.model.objects.get(pk=pk)
 
@@ -505,8 +580,7 @@ class OpportunityCommentView(APIView):
         params = request.data
         obj = self.get_object(pk)
         if (
-            request.profile.role == Constants.ADMIN
-            or request.user.is_superuser
+            isFullyAuthorizedCrmUser(request.profile)
             or request.profile == obj.commented_by
         ):
             serializer = CommentSerializer(obj, data=params)
@@ -535,8 +609,7 @@ class OpportunityCommentView(APIView):
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
         if (
-            request.profile.role == Constants.ADMIN
-            or request.user.is_superuser
+            isFullyAuthorizedCrmUser(request.profile)
             or request.profile == self.object.commented_by
         ):
             self.object.delete()
@@ -558,15 +631,20 @@ class OpportunityAttachmentView(APIView):
     #authentication_classes = (CustomDualAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    def get_permissions(self):
+        if self.request.method in Constants.HTTP_WRITE_METHODS:
+            return [crm_permissions.CanModifyOpportunities()] 
+        else:
+            return [crm_permissions.CanListOpportunities()]
+
     @extend_schema(
         tags=["Opportunities"], parameters=swagger_params1.organization_params
     )
     def delete(self, request, pk, format=None):
         self.object = self.model.objects.get(pk=pk)
         if (
-            request.profile.role == Constants.ADMIN
-            or request.user.is_superuser
-            or request.profile == self.object.created_by
+            isFullyAuthorizedCrmUser(request.profile)
+            or request.profile.user == self.object.created_by
         ):
             self.object.delete()
             return Response(

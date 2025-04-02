@@ -654,3 +654,7 @@ def get_random_digits(n_of_digits):
     """Returns a string of length n_of_digits composed of random numbers
     between 0 and 9 (both are inclusive)"""
     return ("".join([str(randint(0, 9)) for i in range(0, n_of_digits)]))
+
+def isFullyAuthorizedCrmUser(profile):
+    return (profile.role in [Constants.ADMIN, Constants.SALES_MANAGER] 
+            or profile.user.is_superuser)
