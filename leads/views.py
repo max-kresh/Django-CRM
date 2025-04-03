@@ -1,7 +1,6 @@
 import datetime
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from django.db.models import F
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.pagination import LimitOffsetPagination
@@ -21,6 +20,7 @@ from common.serializer import (
     LeadCommentSerializer,
     ProfileSerializer,
 )
+from contacts.serializer import ContactSerializer
 from .forms import LeadListForm
 from .models import Company,Lead
 from common.utils import COUNTRIES, INDCHOICES, LEAD_SOURCE, LEAD_STATUS, Constants
@@ -64,7 +64,6 @@ class LeadListView(APIView, LimitOffsetPagination):
         params = self.request.query_params
         queryset = (
             self.model.objects.filter(org=self.request.profile.org)
-            .exclude(status="converted")
             .select_related("created_by")
             .prefetch_related( 
                 "tags",
@@ -100,49 +99,33 @@ class LeadListView(APIView, LimitOffsetPagination):
             if params.get("email"):
                 queryset = queryset.filter(email__icontains=params.get("email"))
         context = {}
-        queryset_open = queryset.exclude(status="closed")
-        results_leads_open = self.paginate_queryset(
-            queryset_open.distinct(), self.request, view=self
+
+        queryset_leads = queryset.distinct()
+        results_leads = self.paginate_queryset(
+            queryset_leads, self.request, view=self
         )
-        open_leads = LeadSerializer(results_leads_open, many=True).data
-        if results_leads_open:
-            offset = queryset_open.filter(id__gte=results_leads_open[-1].id).count()
-            if offset == queryset_open.count():
+        leads = LeadSerializer(results_leads, many=True).data
+        if results_leads:
+            offset = queryset_leads.filter(id__gte=results_leads[-1].id).count()
+            if offset == queryset_leads.count():
                 offset = None
         else:
             offset = 0
-        context["per_page"] = 10
-        page_number = (int(self.offset / 10) + 1,)
+
+        limit = int(params.get("limit"))
+
+        context["per_page"] = limit
+        page_number = (int(self.offset / limit) + 1,)
         context["page_number"] = page_number
-        context["open_leads"] = {
+
+        context["leads"] = {
             "leads_count": self.count,
-            "open_leads": open_leads,
-            "offset": offset,
+            "leads": leads,
+            "offset": offset
         }
 
-        queryset_close = queryset.filter(status="closed")
-        results_leads_close = self.paginate_queryset(
-            queryset_close.distinct(), self.request, view=self
-        )
-        close_leads = LeadSerializer(results_leads_close, many=True).data
-        if results_leads_close:
-            offset = queryset_close.filter(id__gte=results_leads_close[-1].id).count()
-            if offset == queryset_close.count():
-                offset = None
-        else:
-            offset = 0
-
-        context["close_leads"] = {
-            "leads_count": self.count,
-            "close_leads": close_leads,
-            "offset": offset,
-        }
-        contacts = Contact.objects.filter(org=self.request.profile.org).values(
-            "id", "first_name", "last_name", "organization","title", 
-            "primary_email", "mobile_number", 
-            "address__address_line", "address__city", "address__street", "address__state",
-            "address__postcode", "address__country"
-        )
+        results_contacts = Contact.objects.filter(org=self.request.profile.org).all()
+        contacts = ContactSerializer(results_contacts, many=True).data
 
         context["contacts"] = contacts
         context["status"] = LEAD_STATUS

@@ -129,6 +129,24 @@ class Lead(BaseModel):
     def get_contacts_list(self):
         return list(self.contacts.all())
 
+    def save(self, *args, **kwargs):
+
+        old = Lead.objects.filter(id=self.id).first()
+
+        super(Lead, self).save(*args, **kwargs)
+
+        if (old == None):
+            status_history = LeadStatusHistory(lead=self,
+                                               status=self.status,
+                                               changed_by=self.created_by.profile.first())
+            status_history.save()
+        else:
+            if (old.status != self.status):
+                status_history = LeadStatusHistory(lead=self,
+                                                   status=self.status,
+                                                   changed_by=self.updated_by.profile.first())
+                status_history.save()
+
     # def save(self, *args, **kwargs):
     #     super(Lead, self).save(*args, **kwargs)
     #     queryset = Lead.objects.all().exclude(status='converted').select_related('created_by'
@@ -137,3 +155,17 @@ class Lead(BaseModel):
     #     close_leads = queryset.filter(status='closed')
     #     cache.set('admin_leads_open_queryset', open_leads, 60*60)
     #     cache.set('admin_leads_close_queryset', close_leads, 60*60)
+
+class LeadStatusHistory(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="status_history")
+    status = models.CharField(
+        _("Status of Lead"), max_length=255, blank=True, null=True, choices=LEAD_STATUS
+    )
+    changed_by = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "LeadStatusHistory"
+        verbose_name_plural = "LeadStatusHistory"
+        db_table = "lead_status_history"
+        ordering = ("-changed_at",)
