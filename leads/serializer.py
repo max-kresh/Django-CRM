@@ -9,7 +9,7 @@ from common.serializer import (
     UserSerializer,
 )
 from contacts.serializer import ContactSerializer
-from leads.models import Company, Lead
+from leads.models import Company, Lead, LeadStatusHistory
 from teams.serializer import TeamsSerializer
 
 
@@ -29,6 +29,12 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = ("id", "name", "org")
 
+class LeadStatusHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeadStatusHistory
+        fields = (
+        "status", "changed_by", "changed_at",
+        )
 
 class LeadSerializer(serializers.ModelSerializer):
     contacts = ContactSerializer(read_only=True, many=True)
@@ -39,6 +45,7 @@ class LeadSerializer(serializers.ModelSerializer):
     lead_attachment = AttachmentsSerializer(read_only=True, many=True)
     teams = TeamsSerializer(read_only=True, many=True)
     lead_comments = LeadCommentSerializer(read_only=True, many=True)
+    status_history = LeadStatusHistorySerializer(read_only=True, many=True)
 
     def get_country(self, obj):
         return obj.get_country_display()
@@ -82,6 +89,7 @@ class LeadSerializer(serializers.ModelSerializer):
             "organization",
             "probability",
             "close_date",
+            "status_history",
         )
 
 
