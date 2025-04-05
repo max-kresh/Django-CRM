@@ -22,7 +22,7 @@ class Opportunity(BaseModel):
         null=True,
     )
     stage = models.CharField(
-        pgettext_lazy("Stage of Opportunity", "Stage"), max_length=64, choices=STAGES
+        pgettext_lazy("Stage of Opportunity", "Stage"), max_length=64, choices=STAGES, db_index=True
     )
     currency = models.CharField(
         max_length=3, choices=CURRENCY_CODES, blank=True, null=True
