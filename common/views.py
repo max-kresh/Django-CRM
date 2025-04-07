@@ -365,7 +365,7 @@ class ApiHomeView(APIView):
                 Q(assigned_to=self.request.profile) | Q(created_by=self.request.profile.user)
             )
             contacts = contacts.filter(
-                Q(assigned_to__id__in=self.request.profile)
+                Q(assigned_to=self.request.profile)
                 | Q(created_by=self.request.profile.user)
             )
             leads = leads.filter(
